@@ -1,17 +1,31 @@
+/* Design tokens taken from the VEXA_16x9_2026 template: theme colours, Source Sans,
+   the 0.25 cm (7.1 px) corner radius and the hairline rules of the slide grid.
+   The deck's structure is carried over: dark chrome, light working area, no shadows. */
 :root {
-  --bg: #f5f6f8;
+  --ink: #000000;
+  --navy: #0f3c64;
+  --sand: #f0e6dc;
+  --burgundy: #500005;
+  --teal: #096d68;
+  --periwinkle: #7391d7;
+  --terracotta: #9a390d;
+  --amber: #cd9340;
+
+  --dark: #05141e;
+  --grey-700: #4d4d4d;
+  --grey-500: #7f7f7f;
+  --grey-400: #b3b3b3;
+  --grey-300: #d0d0d0;
+  --grey-200: #e6e6e6;
+  --grey-100: #ececec;
+
+  --page: #ffffff;
   --panel: #ffffff;
-  --ink: #1b1f26;
-  --muted: #6b7280;
-  --line: #e2e5ea;
-  --accent: #2f5bd7;
-  --warn: #b45309;
-  --todo: #9ca3af;
-  --error: #b91c1c;
-  --low: #d1fae5;
-  --medium: #fef3c7;
-  --high: #fed7aa;
-  --extreme: #fecaca;
+  --rule: #d0d0d0;
+  --hairline: #e6e6e6;
+  --radius: 7px;
+
+  --font: "Source Sans 3", "Source Sans Pro", -apple-system, "Segoe UI", sans-serif;
 }
 
 * {
@@ -20,109 +34,38 @@
 
 body {
   margin: 0;
-  font: 15px/1.45 "Inter", "Segoe UI", system-ui, sans-serif;
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.45;
   color: var(--ink);
-  background: var(--bg);
+  background: var(--page);
+  -webkit-font-smoothing: antialiased;
 }
 
+/* Slide titles in the template are uppercase and widely tracked. */
 h1 {
-  font-size: 22px;
-  margin: 0 0 4px;
+  font-size: 25px;
+  font-weight: 600;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  margin: 0 0 6px;
 }
+
 h2 {
   font-size: 17px;
+  font-weight: 600;
   margin: 0 0 8px;
 }
+
 h3 {
   font-size: 15px;
+  font-weight: 600;
   margin: 0 0 8px;
 }
 
 a {
-  color: var(--accent);
-}
-
-.app {
-  min-height: 100vh;
-}
-
-.topbar {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  padding: 10px 20px;
-  background: var(--panel);
-  border-bottom: 1px solid var(--line);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.brand {
-  font-weight: 650;
-}
-
-.topbar nav {
-  display: flex;
-  gap: 14px;
-}
-
-.topbar nav a {
-  text-decoration: none;
-  color: var(--muted);
-  padding: 4px 2px;
-}
-
-.topbar nav a.active {
-  color: var(--ink);
-  border-bottom: 2px solid var(--accent);
-}
-
-.who {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--muted);
-  font-size: 13px;
-}
-
-main {
-  padding: 20px;
-}
-
-.page {
-  max-width: 1280px;
-  margin: 0 auto;
-}
-
-.centered {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-}
-
-.card {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 14px 16px;
-  margin-bottom: 14px;
-}
-
-.login {
-  width: 320px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-label {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 13px;
-  color: var(--muted);
+  color: var(--navy);
+  text-underline-offset: 2px;
 }
 
 input,
@@ -136,41 +79,243 @@ button {
 input,
 select,
 textarea {
-  padding: 7px 9px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: #fff;
   width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: #fff;
 }
 
-textarea {
-  resize: vertical;
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: 1px;
 }
 
 button {
-  padding: 7px 14px;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  background: var(--accent);
+  padding: 7px 16px;
+  border: 1px solid var(--navy);
+  border-radius: var(--radius);
+  background: var(--navy);
   color: #fff;
+  font-weight: 600;
   cursor: pointer;
 }
 
+button:hover:not(:disabled) {
+  background: #15497a;
+}
+
 button:disabled {
-  opacity: 0.6;
+  opacity: 0.55;
   cursor: default;
 }
 
+button.ghost {
+  background: transparent;
+  color: var(--navy);
+}
+
+button.ghost:hover:not(:disabled) {
+  background: var(--grey-100);
+}
+
 button.link {
-  background: none;
-  border: none;
-  color: var(--accent);
   padding: 0;
+  border: none;
+  background: none;
+  color: var(--navy);
+  font-weight: 400;
   text-align: left;
 }
 
+/* Chrome ------------------------------------------------------------------ */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 0 24px;
+  height: 56px;
+  background: var(--dark);
+  color: #fff;
+}
+
+.topbar .logo {
+  height: 22px;
+  width: auto;
+  display: block;
+}
+
+.topbar nav {
+  display: flex;
+  gap: 20px;
+  height: 100%;
+  align-items: center;
+}
+
+.topbar nav a {
+  color: rgba(255, 255, 255, 0.72);
+  text-decoration: none;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  border-bottom: 2px solid transparent;
+}
+
+.topbar nav a:hover {
+  color: #fff;
+}
+
+.topbar nav a.active {
+  color: #fff;
+  border-bottom-color: var(--periwinkle);
+}
+
+.who {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.who button.link {
+  color: #fff;
+}
+
+main {
+  padding: 22px 24px 48px;
+}
+
+.page {
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+.page > h1 + .muted {
+  margin-top: -2px;
+}
+
+.centered {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+/* Login: the template's title slide — dark field, hairline grid, wordmark. */
+.title-slide {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr minmax(320px, 420px) 1fr;
+  align-items: center;
+  background:
+    linear-gradient(118deg, #020a12 0%, #0a2238 46%, #17456e 78%, #2d5f8f 100%);
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+/* The hairline rules that frame the working area on every slide. */
+.title-slide::before,
+.title-slide::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.title-slide::before {
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+  margin: 9vh 0;
+}
+
+.title-slide::after {
+  border-left: 1px solid rgba(255, 255, 255, 0.22);
+  border-right: 1px solid rgba(255, 255, 255, 0.22);
+  margin: 0 11vw;
+}
+
+.title-slide .login {
+  grid-column: 2;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 28px 30px 30px;
+  background: rgba(5, 20, 30, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius);
+  backdrop-filter: blur(2px);
+}
+
+.title-slide .logo {
+  width: 136px;
+  margin-bottom: 4px;
+}
+
+.title-slide h1 {
+  font-size: 21px;
+  line-height: 1.25;
+}
+
+.title-slide label {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.title-slide input {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+
+.title-slide button[type="submit"] {
+  margin-top: 6px;
+  background: #fff;
+  border-color: #fff;
+  color: var(--dark);
+}
+
+.title-slide button[type="submit"]:hover:not(:disabled) {
+  background: var(--sand);
+  border-color: var(--sand);
+}
+
+.title-slide .muted {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Surfaces ---------------------------------------------------------------- */
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--grey-700);
+}
+
 .muted {
-  color: var(--muted);
+  color: var(--grey-500);
 }
 .small {
   font-size: 13px;
@@ -179,44 +324,55 @@ button.link {
   white-space: pre-wrap;
 }
 .empty {
-  color: var(--muted);
+  color: var(--grey-500);
   padding: 12px 0;
 }
 .error {
-  color: var(--error);
+  color: var(--burgundy);
   font-size: 13px;
   margin: 6px 0;
 }
 .warn {
-  color: var(--warn);
+  color: var(--terracotta);
   font-size: 13px;
 }
 .todo {
-  color: var(--todo);
+  color: var(--grey-500);
   font-size: 13px;
+}
+
+.breadcrumbs {
+  font-size: 13px;
+  color: var(--grey-500);
+  margin-bottom: 10px;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .client-card {
+  display: block;
   text-decoration: none;
   color: inherit;
-  display: block;
+  border-left: 3px solid var(--navy);
 }
 
 .client-card:hover {
-  border-color: var(--accent);
+  background: var(--grey-100);
+}
+
+.client-card h2 {
+  margin-bottom: 2px;
 }
 
 .client-card .count {
-  margin-top: 8px;
+  margin-top: 10px;
   font-size: 13px;
-  color: var(--muted);
+  color: var(--grey-500);
 }
 
 .inline-form {
@@ -224,6 +380,8 @@ button.link {
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+  background: var(--grey-100);
+  border-color: var(--grey-200);
 }
 
 .inline-form h2 {
@@ -233,67 +391,76 @@ button.link {
 .inline-form input,
 .inline-form select {
   width: auto;
-  min-width: 180px;
+  min-width: 190px;
 }
 
 .toolbar {
   display: flex;
   gap: 16px;
   align-items: flex-end;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .toolbar label {
-  min-width: 180px;
+  min-width: 190px;
 }
 
+/* Tables: hairline rules only, as in the template's data slides. */
 .table {
   width: 100%;
   border-collapse: collapse;
-  background: var(--panel);
   font-size: 14px;
+  font-variant-numeric: tabular-nums;
 }
 
 .table th,
 .table td {
-  border-bottom: 1px solid var(--line);
-  padding: 7px 9px;
+  padding: 8px 10px;
   text-align: left;
   vertical-align: top;
+  border-bottom: 1px solid var(--hairline);
 }
 
 .table thead th {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--muted);
+  font-size: 13px;
   font-weight: 600;
+  color: var(--grey-700);
+  border-bottom: 1px solid var(--grey-400);
+  white-space: nowrap;
 }
 
+.table tbody tr:last-child td,
+.table tbody tr:last-child th {
+  border-bottom: none;
+}
+
+/* Damage ladder: the template's own colour sequence, low to extreme. */
 .chip {
   display: inline-block;
-  padding: 1px 8px;
-  border-radius: 20px;
-  background: var(--line);
+  min-width: 46px;
+  padding: 1px 9px;
+  border-radius: var(--radius);
+  background: var(--grey-200);
+  color: var(--ink);
   font-size: 13px;
+  font-weight: 600;
+  text-align: center;
 }
 .chip-low {
-  background: var(--low);
+  background: var(--teal);
+  color: #fff;
 }
 .chip-medium {
-  background: var(--medium);
+  background: var(--amber);
+  color: var(--ink);
 }
 .chip-high {
-  background: var(--high);
+  background: var(--terracotta);
+  color: #fff;
 }
 .chip-extreme {
-  background: var(--extreme);
-}
-
-.breadcrumbs {
-  font-size: 13px;
-  color: var(--muted);
-  margin-bottom: 8px;
+  background: var(--burgundy);
+  color: #fff;
 }
 
 .system-head {
@@ -301,7 +468,7 @@ button.link {
   justify-content: space-between;
   gap: 16px;
   align-items: flex-start;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .new-survey {
@@ -313,11 +480,12 @@ button.link {
   width: auto;
 }
 
-/* Survey form */
+/* Questionnaire ----------------------------------------------------------- */
+
 .survey {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 18px;
+  gap: 20px;
   align-items: start;
 }
 
@@ -326,7 +494,7 @@ button.link {
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .actions {
@@ -337,45 +505,52 @@ button.link {
 
 .save {
   font-size: 13px;
-  color: var(--muted);
-  min-width: 100px;
-}
-.save-error {
-  color: var(--error);
+  color: var(--grey-500);
+  min-width: 104px;
 }
 
-.part h2 {
-  margin: 18px 0 10px;
-  font-size: 16px;
-  color: var(--accent);
+.save-error {
+  color: var(--burgundy);
+}
+
+.part > h2 {
+  margin: 22px 0 10px;
+  padding-bottom: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  color: var(--navy);
+  border-bottom: 1px solid var(--rule);
 }
 
 .question-head {
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 
 .code {
   display: inline-block;
-  min-width: 26px;
+  min-width: 24px;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--grey-400);
+  font-variant-numeric: tabular-nums;
 }
 
 .question-text {
-  font-weight: 550;
+  font-weight: 600;
 }
 
 .help {
   font-size: 13px;
-  color: var(--muted);
+  color: var(--grey-500);
   white-space: pre-wrap;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .question-input {
-  margin: 8px 0 0 36px;
-  max-width: 640px;
+  margin: 10px 0 0 36px;
+  max-width: 620px;
 }
 
 .stack {
@@ -385,34 +560,55 @@ button.link {
 }
 
 .matrix header p {
-  margin: 4px 0 6px;
+  margin: 4px 0 8px;
+  max-width: 70ch;
+}
+
+.levels-table {
+  margin-bottom: 10px;
 }
 
 .levels-table td {
   font-size: 12px;
-  line-height: 1.35;
+  line-height: 1.4;
+  color: var(--grey-700);
+}
+
+.levels-table thead th {
+  color: var(--navy);
 }
 
 .pick-grid .period-col {
   width: 34%;
-  font-weight: 500;
+  font-weight: 400;
+}
+
+.pick-grid thead th:not(.period-col) {
+  text-align: center;
 }
 
 .pick-grid .pick {
-  text-align: center;
   width: 16%;
+  text-align: center;
 }
 
 .pick-grid .pick input {
   width: auto;
+  accent-color: var(--navy);
+  width: 16px;
+  height: 16px;
 }
 
 .pick-grid tbody tr:hover {
-  background: #fafbfe;
+  background: var(--grey-100);
 }
 
 .row-warn {
-  background: #fffbeb;
+  background: #fdf3ec;
+}
+
+.row-warn:hover {
+  background: #fbe9dc;
 }
 
 .sr-only {
@@ -423,22 +619,53 @@ button.link {
   clip: rect(0 0 0 0);
 }
 
-/* Result side panel */
+/* Result panel ------------------------------------------------------------ */
+
 .side {
   position: sticky;
-  top: 70px;
+  top: 78px;
+}
+
+.side .card:first-child {
+  background: var(--dark);
+  border-color: var(--dark);
+  color: #fff;
+}
+
+.side .card:first-child .muted {
+  color: rgba(255, 255, 255, 0.66);
 }
 
 .bar {
-  height: 8px;
-  background: var(--line);
+  height: 6px;
+  background: rgba(255, 255, 255, 0.22);
   border-radius: 20px;
   overflow: hidden;
 }
 
 .bar-fill {
   height: 100%;
-  background: var(--accent);
+  background: var(--periwinkle);
+  transition: width 0.25s ease;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+  margin: 12px 0;
+}
+
+.metrics dt {
+  font-size: 12px;
+  color: var(--grey-500);
+}
+
+.metrics dd {
+  margin: 2px 0 0;
+  font-size: 17px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .side .table {
@@ -452,29 +679,13 @@ button.link {
   word-break: break-word;
 }
 
-.side .table thead th:first-child {
-  width: 46%;
-}
-
 .side .table thead th {
-  letter-spacing: 0;
+  white-space: normal;
+  word-break: normal;
 }
 
-.metrics {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin: 10px 0 12px;
-}
-
-.metrics dt {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.metrics dd {
-  margin: 2px 0 0;
-  font-weight: 600;
+.side .table thead th:first-child {
+  width: 40%;
 }
 
 .issues {
@@ -486,19 +697,29 @@ button.link {
 }
 
 .issues li {
-  margin-bottom: 4px;
+  margin-bottom: 5px;
 }
 
 .instructions p {
-  margin: 6px 0;
+  margin: 8px 0;
   font-size: 13px;
+  max-width: 78ch;
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 1040px) {
   .survey {
     grid-template-columns: 1fr;
   }
   .side {
     position: static;
+  }
+  .title-slide::after {
+    margin: 0 4vw;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
   }
 }

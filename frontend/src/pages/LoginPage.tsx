@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import logo from "../assets/vexa-logo-light.png";
 import { useAuth } from "../lib/auth";
 
 export default function LoginPage() {
@@ -23,10 +24,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="centered">
-      <form className="card login" onSubmit={submit}>
-        <h1>Опросник BIA</h1>
-        <p className="muted">Оценка влияния недоступности и потери данных</p>
+    <div className="title-slide">
+      <form className="login" onSubmit={submit}>
+        <img className="logo" src={logo} alt="VEXA partners" />
+        <h1>
+          Оценка влияния
+          <br />
+          недоступности и потери данных
+        </h1>
         <label>
           Email
           <input
@@ -49,8 +54,12 @@ export default function LoginPage() {
         </label>
         {error && <div className="error">{error}</div>}
         <button type="submit" disabled={busy}>
-          {busy ? "Вход…" : "Войти"}
+          {busy ? "Входим…" : "Войти"}
         </button>
+        <p className="muted small">
+          Доступ выдаёт администратор проекта. Если войти не получается, напишите своему
+          консультанту.
+        </p>
       </form>
     </div>
   );

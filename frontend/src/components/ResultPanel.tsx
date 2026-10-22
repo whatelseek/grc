@@ -16,8 +16,10 @@ export default function ResultPanel({ result }: { result: Result }) {
         </div>
         <p className="muted">
           {progress.required_filled} из {progress.required_total} обязательных вопросов
-          {progress.warnings > 0 && <> · замечаний: {progress.warnings}</>}
         </p>
+        {progress.warnings > 0 && (
+          <p className="muted">Замечаний: {progress.warnings}</p>
+        )}
       </div>
 
       <div className="card">
@@ -49,7 +51,7 @@ export default function ResultPanel({ result }: { result: Result }) {
           <thead>
             <tr>
               <th>Тип ущерба</th>
-              <th>Недоступность</th>
+              <th>Простой</th>
               <th>Потеря данных</th>
             </tr>
           </thead>

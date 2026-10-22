@@ -15,11 +15,13 @@ export function criticality(value: number | null): string {
   return value === null ? "—" : `${Math.round(value * 100)}%`;
 }
 
+/** Criticality maps onto the same four-step damage ladder the questionnaire uses:
+ *  25% низкий, 50% средний, 75% высокий, 100% крайне высокий. */
 export function criticalityClass(value: number | null): string {
   if (value === null) return "chip";
-  if (value >= 0.85) return "chip chip-extreme";
-  if (value >= 0.6) return "chip chip-high";
-  if (value >= 0.35) return "chip chip-medium";
+  if (value > 0.75) return "chip chip-extreme";
+  if (value > 0.5) return "chip chip-high";
+  if (value > 0.25) return "chip chip-medium";
   return "chip chip-low";
 }
 

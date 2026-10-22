@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 import type { ReactNode } from "react";
 
+import logo from "../assets/vexa-logo-light.png";
 import { useAuth } from "../lib/auth";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -15,7 +16,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="app">
       <header className="topbar">
-        <div className="brand">BIA / AIA опросник</div>
+        <img className="logo" src={logo} alt="VEXA partners" />
         <nav>
           <NavLink to="/clients">Клиенты</NavLink>
           <NavLink to="/dashboard">Сводка</NavLink>
@@ -24,7 +25,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         <div className="who">
           <span>
             {user?.full_name || user?.email}
-            <small> · {ROLE_LABELS[user?.role ?? ""]}</small>
+            <span className="muted"> · {ROLE_LABELS[user?.role ?? ""]}</span>
           </span>
           <button type="button" className="link" onClick={logout}>
             Выйти
