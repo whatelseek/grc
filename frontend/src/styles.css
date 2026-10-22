@@ -185,8 +185,15 @@ button.link {
   display: flex;
   align-items: center;
   gap: 14px;
+  min-width: 0;
   font-size: 13px;
   color: rgba(255, 255, 255, 0.72);
+}
+
+.who > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .who button.link {
@@ -706,6 +713,28 @@ label {
   max-width: 78ch;
 }
 
+/* Narrow screens: the role label is the first thing to go, then the name. */
+@media (max-width: 720px) {
+  .topbar {
+    gap: 16px;
+    padding: 0 16px;
+  }
+
+  .who .muted {
+    display: none;
+  }
+
+  main {
+    padding: 18px 16px 40px;
+  }
+}
+
+@media (max-width: 520px) {
+  .who > span {
+    display: none;
+  }
+}
+
 @media (max-width: 1040px) {
   .survey {
     grid-template-columns: 1fr;
@@ -722,4 +751,167 @@ label {
   * {
     transition: none !important;
   }
+}
+
+/* Analytics ---------------------------------------------------------------- */
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.tile {
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-left: 3px solid var(--navy);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+
+.tile-good {
+  border-left-color: var(--teal);
+}
+.tile-serious {
+  border-left-color: var(--terracotta);
+}
+.tile-critical {
+  border-left-color: var(--burgundy);
+}
+
+.tile-value {
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.tile-label {
+  font-size: 13px;
+  color: var(--grey-700);
+  margin-top: 2px;
+}
+
+.tile-note {
+  font-size: 12px;
+  color: var(--grey-500);
+  margin-top: 6px;
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr));
+  gap: 12px;
+}
+
+.chart {
+  margin: 0 0 12px;
+  position: relative;
+}
+
+.chart figcaption {
+  margin-bottom: 10px;
+}
+
+.chart figcaption p {
+  margin: 2px 0 0;
+  max-width: 70ch;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  color: var(--grey-700);
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.plot {
+  position: relative;
+}
+
+.svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* Charts are drawn at their natural size; scaling one up would inflate its type. */
+.chart .plot {
+  max-width: 1060px;
+}
+
+.chart-grid .chart .plot {
+  max-width: 520px;
+}
+
+.svg .axis-label {
+  font-size: 11px;
+  fill: var(--grey-700);
+}
+
+.svg .tick {
+  text-anchor: middle;
+  fill: var(--grey-500);
+}
+
+.svg .value-label {
+  font-size: 11px;
+  fill: var(--grey-700);
+  font-variant-numeric: tabular-nums;
+}
+
+.svg .value-label.strong {
+  font-size: 17px;
+  font-weight: 600;
+  fill: var(--ink);
+}
+
+.svg .grid-line {
+  stroke: var(--hairline);
+  stroke-width: 1;
+}
+
+.chart .tip {
+  position: absolute;
+  transform: translate(10px, -50%);
+  background: var(--dark);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.35;
+  padding: 6px 9px;
+  border-radius: var(--radius);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 5;
+}
+
+.chart .tip-head {
+  font-weight: 600;
+}
+
+.chart-table {
+  margin-bottom: 8px;
+  overflow-x: auto;
+}
+
+.table-scroll {
+  overflow-x: auto;
 }

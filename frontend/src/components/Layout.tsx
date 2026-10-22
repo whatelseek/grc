@@ -19,6 +19,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         <img className="logo" src={logo} alt="VEXA partners" />
         <nav>
           <NavLink to="/clients">Клиенты</NavLink>
+          <NavLink to="/analytics">Аналитика</NavLink>
           <NavLink to="/dashboard">Сводка</NavLink>
           {user?.role === "admin" && <NavLink to="/users">Пользователи</NavLink>}
         </nav>

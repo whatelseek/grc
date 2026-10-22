@@ -6,7 +6,7 @@ from sqlalchemy import text
 
 from app.config import get_settings
 from app.db import Base, engine
-from app.routers import auth, clients, dashboard, surveys, template, users
+from app.routers import analytics, auth, clients, dashboard, surveys, template, users
 
 
 @asynccontextmanager
@@ -39,6 +39,7 @@ app.include_router(clients.systems_router)
 app.include_router(surveys.router)
 app.include_router(template.router)
 app.include_router(dashboard.router)
+app.include_router(analytics.router)
 
 
 @app.get("/api/health")

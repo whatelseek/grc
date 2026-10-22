@@ -184,6 +184,144 @@ function dashboardRows(clientId: string | null): DashboardRow[] {
     });
 }
 
+const RTO_SCALE_HOURS: Record<string, number | null> = {
+  "15 минут": 0.25,
+  "30 минут": 0.5,
+  "1 час": 1,
+  "4 часа": 4,
+  "8 часов": 8,
+  "24 часа": 24,
+  "3 суток": 72,
+  "7 суток": 168,
+  "более 7 суток": null,
+};
+const RPO_SCALE_HOURS: Record<string, number | null> = {
+  "0 (потеря недопустима)": 0,
+  "2 минуты": 2 / 60,
+  "15 минут": 0.25,
+  "2 часа": 2,
+  "8 часов": 8,
+  "24 часа": 24,
+  "3 суток": 72,
+  "7 суток": 168,
+  "2 недели": 336,
+  "более 2 недель": null,
+};
+
+function toHours(label: string | null | undefined, scale: Record<string, number | null>) {
+  if (!label || !(label in scale)) return { hours: null as number | null, beyond: false };
+  const value = scale[label];
+  return value === null ? { hours: null, beyond: true } : { hours: value, beyond: false };
+}
+
+function bandFor(criticality: number | null): string | null {
+  if (criticality === null) return null;
+  if (criticality > 0.75) return "Крайне высокий";
+  if (criticality > 0.5) return "Высокий";
+  if (criticality > 0.25) return "Средний";
+  return "Низкий";
+}
+
+/** Mirrors backend/app/analytics.py for the offline preview. */
+function analytics(clientId: string | null) {
+  const scoped = surveys.filter(
+    (survey) => !clientId || system(survey.system_id).client_id === clientId,
+  );
+  const profile: Record<string, number> = {
+    Низкий: 0,
+    Средний: 0,
+    Высокий: 0,
+    "Крайне высокий": 0,
+  };
+  const statuses: Record<string, number> = { draft: 0, submitted: 0, reviewed: 0 };
+  const damage: Record<string, { availability: number[]; integrity: number[] }> = {};
+  const recovery: any[] = [];
+  let scored = 0;
+  let complete = 0;
+
+  for (const survey of scoped) {
+    const result = evaluate(template, [...survey.answers.values()]);
+    statuses[survey.status] += 1;
+    if (result.progress.required_filled >= result.progress.required_total) complete += 1;
+
+    const band = bandFor(result.overall_criticality);
+    if (band) {
+      profile[band] += 1;
+      scored += 1;
+    }
+
+    for (const [type, series] of Object.entries(result.criticality_by_type)) {
+      const bucket = (damage[type] ??= { availability: [], integrity: [] });
+      for (const key of ["availability", "integrity"] as const) {
+        const entry = series[key];
+        if (entry && entry.answered) bucket[key].push(entry.criticality);
+      }
+    }
+
+    const text = (code: number) => survey.answers.get(code)?.text ?? null;
+    const currentRto = toHours(text(79), RTO_SCALE_HOURS);
+    const currentRpo = toHours(text(80), RPO_SCALE_HOURS);
+    const gap = (required: number | null, current: number | null, beyond: boolean) => {
+      if (required === null) return null;
+      if (beyond) return Math.max(0, 168 - required) || 168;
+      if (current === null) return null;
+      return Math.round((current - required) * 10000) / 10000;
+    };
+
+    if (result.rto_hours !== null || result.rpo_hours !== null) {
+      const parent = system(survey.system_id);
+      recovery.push({
+        survey_id: survey.id,
+        system_name: parent.name,
+        client_name: client(parent.client_id).name,
+        criticality: result.overall_criticality,
+        band,
+        required_rto: result.rto_hours,
+        current_rto: currentRto.hours,
+        current_rto_beyond_scale: currentRto.beyond,
+        stated_rto: toHours(text(77), RTO_SCALE_HOURS).hours,
+        required_rpo: result.rpo_hours,
+        current_rpo: currentRpo.hours,
+        current_rpo_beyond_scale: currentRpo.beyond,
+        stated_rpo: toHours(text(78), RPO_SCALE_HOURS).hours,
+        rto_gap: gap(result.rto_hours, currentRto.hours, currentRto.beyond),
+        rpo_gap: gap(result.rpo_hours, currentRpo.hours, currentRpo.beyond),
+      });
+    }
+  }
+
+  const mean = (values: number[]) =>
+    values.length ? Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10000) / 10000 : null;
+
+  return {
+    kpis: {
+      surveys_total: scoped.length,
+      surveys_scored: scored,
+      surveys_complete: complete,
+      high_criticality: profile["Высокий"] + profile["Крайне высокий"],
+      rto_gaps: recovery.filter((row) => (row.rto_gap ?? 0) > 0).length,
+      rpo_gaps: recovery.filter((row) => (row.rpo_gap ?? 0) > 0).length,
+    },
+    criticality_profile: ["Низкий", "Средний", "Высокий", "Крайне высокий"].map((band) => ({
+      band,
+      count: profile[band],
+    })),
+    collection: ["draft", "submitted", "reviewed"].map((status) => ({
+      status,
+      count: statuses[status],
+    })),
+    recovery: recovery.sort((a, b) => (b.rto_gap ?? -Infinity) - (a.rto_gap ?? -Infinity)),
+    damage_profile: Object.entries(damage)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([type, values]) => ({
+        damage_type: type,
+        availability: mean(values.availability),
+        integrity: mean(values.integrity),
+        systems: Math.max(values.availability.length, values.integrity.length),
+      })),
+  };
+}
+
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
@@ -200,6 +338,7 @@ function route(method: string, path: string, query: URLSearchParams, body: any):
   if (systemsMatch) return json(systems.filter((s) => s.client_id === systemsMatch[1]));
 
   if (path === "/dashboard") return json(dashboardRows(query.get("client_id")));
+  if (path === "/analytics") return json(analytics(query.get("client_id")));
   if (path === "/dashboard/export.csv") {
     return new Response("Экспорт в CSV доступен в рабочей версии приложения\n", {
       headers: { "Content-Type": "text/csv; charset=utf-8" },

@@ -77,6 +77,7 @@ export default function DashboardPage() {
         </button>
       </div>
 
+      <div className="table-scroll">
       <table className="table">
         <thead>
           <tr>
@@ -133,6 +134,7 @@ export default function DashboardPage() {
           )}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
