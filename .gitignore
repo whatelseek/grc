@@ -18,3 +18,4 @@ dist/
 
 # TypeScript incremental build state
 *.tsbuildinfo
+dist-demo/

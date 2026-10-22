@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
+    "build:demo": "cp ../backend/app/data/questionnaire_v1.json src/demo/questionnaire.json && tsc -b && VITE_DEMO=1 vite build --outDir dist-demo",
     "preview": "vite preview --host 0.0.0.0",
     "typecheck": "tsc --noEmit"
   },

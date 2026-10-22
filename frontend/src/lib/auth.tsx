@@ -17,6 +17,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // In the preview build there is no real session; the demo API always answers.
+    if (import.meta.env.VITE_DEMO === "1") setToken("demo");
     api
       .get<User>("/auth/me")
       .then(setUser)
