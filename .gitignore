@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+
+# Node
+node_modules/
+dist/
+
+# Local configuration and data
+.env
+*.local
+
+# Source questionnaires and other client data
+*.xlsx
+!docs/template/*.xlsx

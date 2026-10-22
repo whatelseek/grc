@@ -1,0 +1,191 @@
+import { useCallback, useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+
+import { api } from "../lib/api";
+import { canEdit, useAuth } from "../lib/auth";
+import { STATUS_LABELS, criticality, criticalityClass, dateTime, hours } from "../lib/format";
+import type { Client, DashboardRow, System, SurveyDetail, User } from "../lib/types";
+
+export default function ClientPage() {
+  const { clientId } = useParams<{ clientId: string }>();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [client, setClient] = useState<Client | null>(null);
+  const [systems, setSystems] = useState<System[]>([]);
+  const [rows, setRows] = useState<DashboardRow[]>([]);
+  const [people, setPeople] = useState<User[]>([]);
+  const [form, setForm] = useState({ name: "", business_owner: "", it_owner: "" });
+  const [error, setError] = useState<string | null>(null);
+
+  const reload = useCallback(async () => {
+    if (!clientId) return;
+    const [clientData, systemsData, dashboardData] = await Promise.all([
+      api.get<Client>(`/clients/${clientId}`),
+      api.get<System[]>(`/clients/${clientId}/systems`),
+      api.get<DashboardRow[]>(`/dashboard?client_id=${clientId}`),
+    ]);
+    setClient(clientData);
+    setSystems(systemsData);
+    setRows(dashboardData);
+    if (canEdit(user)) {
+      setPeople(await api.get<User[]>("/users").catch(() => []));
+    }
+  }, [clientId, user]);
+
+  useEffect(() => {
+    reload().catch((err) => setError(err.message));
+  }, [reload]);
+
+  async function addSystem(event: React.FormEvent) {
+    event.preventDefault();
+    setError(null);
+    try {
+      await api.post(`/clients/${clientId}/systems`, form);
+      setForm({ name: "", business_owner: "", it_owner: "" });
+      await reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Не удалось добавить систему");
+    }
+  }
+
+  async function startSurvey(systemId: string, assigneeId: string) {
+    setError(null);
+    try {
+      const survey = await api.post<SurveyDetail>("/surveys", {
+        system_id: systemId,
+        assignee_id: assigneeId || null,
+      });
+      navigate(`/surveys/${survey.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Не удалось создать опросник");
+    }
+  }
+
+  if (!client) return <div className="page">{error ?? "Загрузка…"}</div>;
+
+  const surveysBySystem = new Map<string, DashboardRow[]>();
+  for (const row of rows) {
+    surveysBySystem.set(row.system_id, [...(surveysBySystem.get(row.system_id) ?? []), row]);
+  }
+
+  return (
+    <div className="page">
+      <div className="breadcrumbs">
+        <Link to="/clients">Клиенты</Link> / {client.name}
+      </div>
+      <h1>{client.name}</h1>
+      {error && <div className="error">{error}</div>}
+
+      {systems.length === 0 && <p className="empty">У клиента ещё нет систем.</p>}
+
+      {systems.map((system) => (
+        <section key={system.id} className="card">
+          <header className="system-head">
+            <div>
+              <h2>{system.name}</h2>
+              <div className="muted">
+                Владелец процесса: {system.business_owner || "—"} · ИТ-владелец: {system.it_owner || "—"}
+              </div>
+            </div>
+            {canEdit(user) && (
+              <NewSurveyButton people={people} onStart={(assignee) => startSurvey(system.id, assignee)} />
+            )}
+          </header>
+
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Опросник</th>
+                <th>Статус</th>
+                <th>Заполнено</th>
+                <th>Критичность</th>
+                <th>MTPD</th>
+                <th>RTO</th>
+                <th>RPO</th>
+                <th>Обновлён</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(surveysBySystem.get(system.id) ?? []).map((row) => (
+                <tr key={row.survey_id}>
+                  <td>
+                    <Link to={`/surveys/${row.survey_id}`}>Открыть</Link>
+                  </td>
+                  <td>{STATUS_LABELS[row.status]}</td>
+                  <td>
+                    {row.required_filled}/{row.required_total}
+                    {row.warnings > 0 && <span className="warn"> ⚠ {row.warnings}</span>}
+                  </td>
+                  <td>
+                    <span className={criticalityClass(row.overall_criticality)}>
+                      {criticality(row.overall_criticality)}
+                    </span>
+                  </td>
+                  <td>{hours(row.mtpd_hours)}</td>
+                  <td>{hours(row.rto_hours)}</td>
+                  <td>{hours(row.rpo_hours)}</td>
+                  <td>{dateTime(row.updated_at)}</td>
+                </tr>
+              ))}
+              {(surveysBySystem.get(system.id) ?? []).length === 0 && (
+                <tr>
+                  <td colSpan={8} className="muted">
+                    Опросников пока нет
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </section>
+      ))}
+
+      {canEdit(user) && (
+        <form className="card inline-form" onSubmit={addSystem}>
+          <h2>Новая система</h2>
+          <input
+            placeholder="Название системы"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            required
+          />
+          <input
+            placeholder="Владелец процесса"
+            value={form.business_owner}
+            onChange={(e) => setForm({ ...form, business_owner: e.target.value })}
+          />
+          <input
+            placeholder="ИТ-владелец"
+            value={form.it_owner}
+            onChange={(e) => setForm({ ...form, it_owner: e.target.value })}
+          />
+          <button type="submit">Добавить</button>
+        </form>
+      )}
+    </div>
+  );
+}
+
+function NewSurveyButton({
+  people,
+  onStart,
+}: {
+  people: User[];
+  onStart: (assigneeId: string) => void;
+}) {
+  const [assignee, setAssignee] = useState("");
+  return (
+    <div className="new-survey">
+      <select value={assignee} onChange={(e) => setAssignee(e.target.value)}>
+        <option value="">Без назначения</option>
+        {people.map((person) => (
+          <option key={person.id} value={person.id}>
+            {person.full_name || person.email}
+          </option>
+        ))}
+      </select>
+      <button type="button" onClick={() => onStart(assignee)}>
+        Новый опросник
+      </button>
+    </div>
+  );
+}
