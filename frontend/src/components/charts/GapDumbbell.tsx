@@ -2,9 +2,11 @@ import { hours } from "../../lib/format";
 import ChartFrame from "./ChartFrame";
 import { Tooltip, useTooltip } from "./Tooltip";
 
-const REQUIRED = "#0f3c64";
-const CURRENT = "#7391d7";
-const GAP = "#9a390d";
+const REQUIRED = "var(--series-required)";
+const CURRENT = "var(--series-current)";
+const GAP = "var(--series-gap)";
+const RING = "var(--mark-ring)";
+const NEUTRAL = "var(--series-neutral)";
 
 export interface RecoveryRow {
   survey_id: string;
@@ -139,20 +141,20 @@ export default function GapDumbbell({ rows, metric }: Props) {
                 y1={y}
                 x2={Math.max(need, now)}
                 y2={y}
-                stroke={behind ? GAP : "#d0d0d0"}
+                stroke={behind ? GAP : NEUTRAL}
                 strokeWidth={2}
                 strokeLinecap="round"
               />
-              <circle cx={need} cy={y} r={5} fill={REQUIRED} stroke="#fff" strokeWidth={2} />
+              <circle cx={need} cy={y} r={5} fill={REQUIRED} stroke={RING} strokeWidth={2} />
               {beyond(row) ? (
                 <>
-                  <circle cx={now} cy={y} r={5} fill="#fff" stroke={CURRENT} strokeWidth={2} />
+                  <circle cx={now} cy={y} r={5} fill={RING} stroke={CURRENT} strokeWidth={2} />
                   <text x={now + 10} y={y + 4} className="value-label">
                     дольше шкалы
                   </text>
                 </>
               ) : (
-                <circle cx={now} cy={y} r={5} fill={CURRENT} stroke="#fff" strokeWidth={2} />
+                <circle cx={now} cy={y} r={5} fill={CURRENT} stroke={RING} strokeWidth={2} />
               )}
               {/* A generous, invisible hit area: the marks themselves are small. */}
               <rect x={0} y={y - 12} width={width} height={24} fill="transparent" />

@@ -2,8 +2,8 @@ import { DAMAGE_LABELS, criticality } from "../../lib/format";
 import ChartFrame from "./ChartFrame";
 import { Tooltip, useTooltip } from "./Tooltip";
 
-const AVAILABILITY = "#0f3c64";
-const INTEGRITY = "#7391d7";
+const AVAILABILITY = "var(--series-required)";
+const INTEGRITY = "var(--series-current)";
 
 export interface DamageRow {
   damage_type: string;
