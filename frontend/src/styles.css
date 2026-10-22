@@ -1,6 +1,7 @@
 /* Design tokens taken from the VEXA_16x9_2026 template: theme colours, Source Sans,
    the 0.25 cm (7.1 px) corner radius and the hairline rules of the slide grid.
-   The deck's structure is carried over: dark chrome, light working area, no shadows. */
+   Light is the deck as published (dark chrome, light working area). Dark keeps
+   the same hues and inverts the working surfaces. No shadows. */
 :root {
   --ink: #000000;
   --navy: #0f3c64;
@@ -21,11 +22,78 @@
 
   --page: #ffffff;
   --panel: #ffffff;
+  --field: #ffffff;
   --rule: #d0d0d0;
   --hairline: #e6e6e6;
   --radius: 7px;
+  --accent-fill: #0f3c64;
+  --on-fill: #ffffff;
+  --button-hover: #15497a;
+  --chrome: #05141e;
+  --chrome-fg: #ffffff;
+  --chrome-muted: rgba(255, 255, 255, 0.72);
+  --chrome-line: transparent;
+  --hero: #05141e;
+  --hero-fg: #ffffff;
+  --hero-muted: rgba(255, 255, 255, 0.66);
+  --bar-track: rgba(255, 255, 255, 0.22);
+  --warn-row: #fdf3ec;
+  --warn-row-hover: #fbe9dc;
+  --tip-bg: #05141e;
+  --tip-fg: #ffffff;
+  --series-required: #0f3c64;
+  --series-current: #7391d7;
+  --series-gap: #9a390d;
+  --series-neutral: #d0d0d0;
+  --mark-ring: #ffffff;
+  --band-low: #096d68;
+  --band-mid: #cd9340;
+  --band-high: #9a390d;
+  --band-extreme: #500005;
+  color-scheme: light;
 
   --font: "Source Sans 3", "Source Sans Pro", -apple-system, "Segoe UI", sans-serif;
+}
+
+[data-theme="dark"] {
+  --ink: #f3f6f8;
+  --navy: #9ec2e6;
+  --sand: #3a3028;
+  --burgundy: #ff9b9b;
+  --teal: #3dbeb6;
+  --periwinkle: #a9c0ef;
+  --terracotta: #f0a27a;
+  --amber: #e2b56a;
+  --dark: #071018;
+  --grey-700: #c9d0d6;
+  --grey-500: #9aa6b0;
+  --grey-400: #7e8b96;
+  --grey-300: #3d4c5a;
+  --grey-200: #2a3846;
+  --grey-100: #1b2834;
+  --page: #0c1620;
+  --panel: #13202c;
+  --field: #0e1a24;
+  --rule: #3c4c5c;
+  --hairline: #243444;
+  --accent-fill: #1e5f96;
+  --button-hover: #2a74b0;
+  --chrome: #071018;
+  --chrome-line: #1e3040;
+  --hero: #16385a;
+  --warn-row: #3a2a22;
+  --warn-row-hover: #4a3428;
+  --tip-bg: #071018;
+  --series-required: #7eaddb;
+  --series-current: #b7c9ef;
+  --series-gap: #e08a62;
+  --series-neutral: #5c6b78;
+  --mark-ring: #13202c;
+  --band-low: #1aa39b;
+  --band-mid: #e0ad55;
+  --band-high: #e07a45;
+  --band-extreme: #e07a84;
+  color-scheme: dark;
 }
 
 * {
@@ -83,7 +151,7 @@ textarea {
   padding: 7px 9px;
   border: 1px solid var(--rule);
   border-radius: var(--radius);
-  background: #fff;
+  background: var(--field);
 }
 
 input:focus-visible,
@@ -97,16 +165,17 @@ a:focus-visible {
 
 button {
   padding: 7px 16px;
-  border: 1px solid var(--navy);
+  border: 1px solid var(--accent-fill);
   border-radius: var(--radius);
-  background: var(--navy);
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--on-fill);
   font-weight: 600;
   cursor: pointer;
 }
 
 button:hover:not(:disabled) {
-  background: #15497a;
+  background: var(--button-hover);
+  border-color: var(--button-hover);
 }
 
 button:disabled {
@@ -143,8 +212,9 @@ button.link {
   gap: 28px;
   padding: 0 24px;
   height: 56px;
-  background: var(--dark);
-  color: #fff;
+  background: var(--chrome);
+  color: var(--chrome-fg);
+  border-bottom: 1px solid var(--chrome-line);
 }
 
 .topbar .logo {
@@ -161,7 +231,7 @@ button.link {
 }
 
 .topbar nav a {
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--chrome-muted);
   text-decoration: none;
   font-size: 14px;
   letter-spacing: 0.02em;
@@ -171,12 +241,12 @@ button.link {
   border-bottom: 2px solid transparent;
 }
 
-.topbar nav a:hover {
-  color: #fff;
+.topbar nav a:hover,
+.topbar nav a.active {
+  color: var(--chrome-fg);
 }
 
 .topbar nav a.active {
-  color: #fff;
   border-bottom-color: var(--periwinkle);
 }
 
@@ -187,7 +257,7 @@ button.link {
   gap: 14px;
   min-width: 0;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--chrome-muted);
 }
 
 .who > span {
@@ -197,7 +267,37 @@ button.link {
 }
 
 .who button.link {
-  color: #fff;
+  color: var(--chrome-fg);
+}
+
+.theme-toggle {
+  padding: 4px 10px;
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.theme-toggle:hover:not(:disabled) {
+  background: var(--grey-100);
+  border-color: var(--rule);
+}
+
+.topbar .theme-toggle {
+  border-color: rgba(255, 255, 255, 0.35);
+  color: var(--chrome-fg);
+}
+
+.topbar .theme-toggle:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.title-theme {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  z-index: 2;
 }
 
 main {
@@ -219,15 +319,15 @@ main {
   place-items: center;
 }
 
-/* Login: the template's title slide — dark field, hairline grid, wordmark. */
+/* Login: the template's title slide. Light is a pale field; dark keeps the
+   original night gradient. Hairline rules frame the working area either way. */
 .title-slide {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 1fr minmax(320px, 420px) 1fr;
   align-items: center;
-  background:
-    linear-gradient(118deg, #020a12 0%, #0a2238 46%, #17456e 78%, #2d5f8f 100%);
-  color: #fff;
+  background: linear-gradient(118deg, #f7f3ee 0%, #eef3f8 48%, #e4edf6 100%);
+  color: var(--ink);
   position: relative;
   overflow: hidden;
 }
@@ -242,14 +342,14 @@ main {
 }
 
 .title-slide::before {
-  border-top: 1px solid rgba(255, 255, 255, 0.22);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+  border-top: 1px solid rgba(5, 20, 30, 0.14);
+  border-bottom: 1px solid rgba(5, 20, 30, 0.14);
   margin: 9vh 0;
 }
 
 .title-slide::after {
-  border-left: 1px solid rgba(255, 255, 255, 0.22);
-  border-right: 1px solid rgba(255, 255, 255, 0.22);
+  border-left: 1px solid rgba(5, 20, 30, 0.14);
+  border-right: 1px solid rgba(5, 20, 30, 0.14);
   margin: 0 11vw;
 }
 
@@ -261,8 +361,8 @@ main {
   flex-direction: column;
   gap: 12px;
   padding: 28px 30px 30px;
-  background: rgba(5, 20, 30, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(15, 60, 100, 0.16);
   border-radius: var(--radius);
   backdrop-filter: blur(2px);
 }
@@ -278,29 +378,73 @@ main {
 }
 
 .title-slide label {
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--grey-700);
 }
 
 .title-slide input {
+  background: var(--field);
+  border-color: var(--rule);
+  color: var(--ink);
+}
+
+.title-slide button[type="submit"] {
+  margin-top: 6px;
+}
+
+.title-slide .muted {
+  color: var(--grey-500);
+}
+
+[data-theme="dark"] .title-slide {
+  background: linear-gradient(118deg, #020a12 0%, #0a2238 46%, #17456e 78%, #2d5f8f 100%);
+  color: #fff;
+}
+
+[data-theme="dark"] .title-slide::before {
+  border-top-color: rgba(255, 255, 255, 0.22);
+  border-bottom-color: rgba(255, 255, 255, 0.22);
+}
+
+[data-theme="dark"] .title-slide::after {
+  border-left-color: rgba(255, 255, 255, 0.22);
+  border-right-color: rgba(255, 255, 255, 0.22);
+}
+
+[data-theme="dark"] .title-slide .login {
+  background: rgba(5, 20, 30, 0.72);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+[data-theme="dark"] .title-slide label,
+[data-theme="dark"] .title-slide .muted {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+[data-theme="dark"] .title-slide input {
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.28);
   color: #fff;
 }
 
-.title-slide button[type="submit"] {
-  margin-top: 6px;
+[data-theme="dark"] .title-slide button[type="submit"] {
   background: #fff;
   border-color: #fff;
-  color: var(--dark);
+  color: #05141e;
 }
 
-.title-slide button[type="submit"]:hover:not(:disabled) {
+[data-theme="dark"] .title-slide button[type="submit"]:hover:not(:disabled) {
   background: var(--sand);
   border-color: var(--sand);
+  color: #05141e;
 }
 
-.title-slide .muted {
-  color: rgba(255, 255, 255, 0.6);
+[data-theme="dark"] .title-slide .theme-toggle {
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+
+[data-theme="dark"] .title-slide .theme-toggle:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* Surfaces ---------------------------------------------------------------- */
@@ -454,19 +598,19 @@ label {
   text-align: center;
 }
 .chip-low {
-  background: var(--teal);
+  background: #096d68;
   color: #fff;
 }
 .chip-medium {
-  background: var(--amber);
-  color: var(--ink);
+  background: #cd9340;
+  color: #1a1a1a;
 }
 .chip-high {
-  background: var(--terracotta);
+  background: #9a390d;
   color: #fff;
 }
 .chip-extreme {
-  background: var(--burgundy);
+  background: #500005;
   color: #fff;
 }
 
@@ -611,11 +755,11 @@ label {
 }
 
 .row-warn {
-  background: #fdf3ec;
+  background: var(--warn-row);
 }
 
 .row-warn:hover {
-  background: #fbe9dc;
+  background: var(--warn-row-hover);
 }
 
 .sr-only {
@@ -634,18 +778,18 @@ label {
 }
 
 .side .card:first-child {
-  background: var(--dark);
-  border-color: var(--dark);
-  color: #fff;
+  background: var(--hero);
+  border-color: var(--hero);
+  color: var(--hero-fg);
 }
 
 .side .card:first-child .muted {
-  color: rgba(255, 255, 255, 0.66);
+  color: var(--hero-muted);
 }
 
 .bar {
   height: 6px;
-  background: rgba(255, 255, 255, 0.22);
+  background: var(--bar-track);
   border-radius: 20px;
   overflow: hidden;
 }
@@ -892,8 +1036,8 @@ label {
 .chart .tip {
   position: absolute;
   transform: translate(10px, -50%);
-  background: var(--dark);
-  color: #fff;
+  background: var(--tip-bg);
+  color: var(--tip-fg);
   font-size: 12px;
   line-height: 1.35;
   padding: 6px 9px;

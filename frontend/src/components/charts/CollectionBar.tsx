@@ -3,9 +3,9 @@ import ChartFrame from "./ChartFrame";
 import { Tooltip, useTooltip } from "./Tooltip";
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: "#d0d0d0",
-  submitted: "#7391d7",
-  reviewed: "#0f3c64",
+  draft: "var(--series-neutral)",
+  submitted: "var(--series-current)",
+  reviewed: "var(--series-required)",
 };
 
 export interface CollectionRow {

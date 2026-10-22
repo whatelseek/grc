@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import logo from "../assets/vexa-logo-light.png";
 import { useAuth } from "../lib/auth";
+import ThemeToggle from "./ThemeToggle";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "администратор",
@@ -28,6 +29,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             {user?.full_name || user?.email}
             <span className="muted"> · {ROLE_LABELS[user?.role ?? ""]}</span>
           </span>
+          <ThemeToggle />
           <button type="button" className="link" onClick={logout}>
             Выйти
           </button>
