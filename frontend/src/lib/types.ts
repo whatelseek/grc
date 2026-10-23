@@ -167,15 +167,20 @@ export type Priority = "low" | "medium" | "high";
 export type AssessmentStatus = "draft" | "in_progress" | "completed";
 
 export interface Safeguard {
+  /** The code people cite, e.g. 3.10. Unique within a catalogue version. */
   id: string;
+  /** Database id, needed to edit the requirement itself. */
+  uuid?: string;
   title: string;
   description: string;
   asset_class: string;
   security_function: string;
   ig: 1 | 2 | 3;
+  is_custom?: boolean;
 }
 
 export interface Control {
+  id?: string;
   number: string;
   title: string;
   description: string;
@@ -254,6 +259,8 @@ export interface Assessment {
   client_name: string | null;
   framework: string;
   framework_version: string;
+  /** The catalogue version this audit was carried out against. */
+  framework_id: string | null;
   name: string;
   target_ig: number;
   status: AssessmentStatus;
@@ -268,4 +275,69 @@ export interface Assessment {
 export interface AssessmentDetail extends Assessment {
   items: AssessmentItem[];
   result: AssessmentResult;
+}
+
+export type FrameworkStatus = "draft" | "published" | "archived";
+
+export interface FrameworkVersion {
+  id: string;
+  key: string;
+  version: string;
+  title: string;
+  source: string;
+  status: FrameworkStatus;
+  notes: string;
+  derived_from_id: string | null;
+  created_at: string;
+  published_at: string | null;
+  control_count: number;
+  safeguard_count: number;
+  custom_count: number;
+  assessments_using: number;
+}
+
+export interface HistoryEntry {
+  id: string;
+  safeguard_id: string;
+  field: string;
+  old_value: string | null;
+  new_value: string | null;
+  changed_at: string;
+  changed_by: string | null;
+}
+
+export interface ComparisonSide {
+  id: string;
+  name: string;
+  framework_version: string;
+  target_ig: number;
+  status: AssessmentStatus;
+  updated_at: string | null;
+  completed_at: string | null;
+  implementation: number | null;
+  gaps: number;
+}
+
+export interface ComparisonRow {
+  safeguard_id: string;
+  title: string;
+  control: string;
+  ig: number;
+  before: ImplementationStatus;
+  after: ImplementationStatus;
+}
+
+export interface Comparison {
+  base: ComparisonSide;
+  target: ComparisonSide;
+  overall_delta: number | null;
+  groups: { group: string; before: number | null; after: number | null; delta: number | null }[];
+  by_control: { control: string; before: number | null; after: number | null; delta: number | null }[];
+  improved: ComparisonRow[];
+  regressed: ComparisonRow[];
+  unchanged: number;
+  only_in_base: string[];
+  only_in_target: string[];
+  gaps_closed: ComparisonRow[];
+  gaps_opened: ComparisonRow[];
 }

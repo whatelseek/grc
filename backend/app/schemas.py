@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.models import (
     AssessmentStatus,
+    FrameworkStatus,
     ImplementationStatus,
     Priority,
     Role,
@@ -186,6 +187,8 @@ class AssessmentCreate(BaseModel):
     name: str = ""
     target_ig: int = Field(default=1, ge=1, le=3)
     assessor_id: uuid.UUID | None = None
+    # Defaults to the current published catalogue version.
+    framework_id: uuid.UUID | None = None
 
 
 class AssessmentUpdate(BaseModel):
@@ -232,6 +235,7 @@ class AssessmentOut(ORMModel):
     client_name: str | None = None
     framework: str
     framework_version: str
+    framework_id: uuid.UUID | None = None
     name: str
     target_ig: int
     status: AssessmentStatus
@@ -246,3 +250,71 @@ class AssessmentOut(ORMModel):
 class AssessmentDetail(AssessmentOut):
     items: list[ItemOut]
     result: dict
+
+
+class FrameworkOut(ORMModel):
+    id: uuid.UUID
+    key: str
+    version: str
+    title: str
+    source: str
+    status: FrameworkStatus
+    notes: str
+    derived_from_id: uuid.UUID | None
+    created_at: datetime
+    published_at: datetime | None
+    control_count: int = 0
+    safeguard_count: int = 0
+    custom_count: int = 0
+    assessments_using: int = 0
+
+
+class FrameworkDraftIn(BaseModel):
+    version: str = Field(min_length=1, max_length=40)
+    notes: str = ""
+
+
+class FrameworkUpdate(BaseModel):
+    title: str | None = None
+    version: str | None = Field(default=None, min_length=1, max_length=40)
+    notes: str | None = None
+    source: str | None = None
+
+
+class ControlIn(BaseModel):
+    number: str = Field(min_length=1, max_length=20)
+    title: str = Field(min_length=1, max_length=300)
+    description: str = ""
+    position: int | None = None
+
+
+class ControlUpdate(BaseModel):
+    number: str | None = None
+    title: str | None = None
+    description: str | None = None
+    position: int | None = None
+
+
+class SafeguardIn(BaseModel):
+    control_id: uuid.UUID
+    code: str = Field(min_length=1, max_length=20)
+    title: str = Field(min_length=1, max_length=400)
+    description: str = ""
+    asset_class: str = ""
+    security_function: str = ""
+    ig: int = Field(default=1, ge=1, le=3)
+    position: int | None = None
+
+
+class SafeguardUpdate(BaseModel):
+    code: str | None = None
+    title: str | None = None
+    description: str | None = None
+    asset_class: str | None = None
+    security_function: str | None = None
+    ig: int | None = Field(default=None, ge=1, le=3)
+    position: int | None = None
+
+
+class MigrateIn(BaseModel):
+    framework_id: uuid.UUID

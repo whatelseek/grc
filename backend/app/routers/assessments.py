@@ -8,19 +8,30 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app import catalogue as catalogue_store
+from app import comparison
 from app.cis_scoring import compute
 from app.db import get_db
 from app.deps import current_user, get_client_for_user, require_editor, visible_client_ids
-from app.frameworks import DEFAULT_FRAMEWORK, DEFAULT_VERSION, load_framework, safeguards
+from app.frameworks import DEFAULT_FRAMEWORK
 from app.models import (
     Assessment,
     AssessmentItem,
+    AssessmentItemHistory,
     AssessmentStatus,
     Client,
+    FrameworkStatus,
     ImplementationStatus,
     User,
 )
-from app.schemas import AssessmentCreate, AssessmentDetail, AssessmentOut, AssessmentUpdate, ItemsPatch
+from app.schemas import (
+    AssessmentCreate,
+    AssessmentDetail,
+    AssessmentOut,
+    AssessmentUpdate,
+    ItemsPatch,
+    MigrateIn,
+)
 
 router = APIRouter(prefix="/api/assessments", tags=["assessments"])
 
@@ -49,13 +60,17 @@ def _get_for_user(db: Session, user: User, assessment_id: uuid.UUID) -> Assessme
     return assessment
 
 
+def _catalogue(assessment: Assessment) -> dict[str, dict]:
+    if assessment.catalogue is None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "У оценки не указана версия каталога требований",
+        )
+    return catalogue_store.safeguards_of(assessment.catalogue)
+
+
 def _result(assessment: Assessment) -> dict:
-    return compute(
-        assessment.items,
-        assessment.target_ig,
-        assessment.framework,
-        assessment.framework_version,
-    )
+    return compute(assessment.items, assessment.target_ig, _catalogue(assessment))
 
 
 def _summary(assessment: Assessment, result: dict | None = None) -> dict:
@@ -66,6 +81,7 @@ def _summary(assessment: Assessment, result: dict | None = None) -> dict:
         "client_name": assessment.client.name if assessment.client else None,
         "framework": assessment.framework,
         "framework_version": assessment.framework_version,
+        "framework_id": assessment.framework_id,
         "name": assessment.name,
         "target_ig": assessment.target_ig,
         "status": assessment.status,
@@ -80,13 +96,23 @@ def _summary(assessment: Assessment, result: dict | None = None) -> dict:
 
 @router.get("/framework")
 def framework(
-    name: str = DEFAULT_FRAMEWORK, version: str = DEFAULT_VERSION, _: User = Depends(current_user)
+    framework_id: uuid.UUID | None = None,
+    key: str = DEFAULT_FRAMEWORK,
+    _: User = Depends(current_user),
+    db: Session = Depends(get_db),
 ) -> dict:
-    """The control catalogue the UI renders: controls, safeguards, groups."""
-    try:
-        return load_framework(name, version)
-    except FileNotFoundError:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Нет фреймворка {name} {version}") from None
+    """The catalogue the UI renders: a specific version, or the current published one."""
+    record = (
+        catalogue_store.get(db, framework_id)
+        if framework_id is not None
+        else catalogue_store.published(db, key)
+    )
+    if record is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            "Каталог требований не загружен. Выполните `python -m app.cli import-framework`.",
+        )
+    return catalogue_store.as_dict(record)
 
 
 @router.get("", response_model=list[AssessmentOut])
@@ -110,11 +136,24 @@ def create_assessment(
     payload: AssessmentCreate, user: User = Depends(require_editor), db: Session = Depends(get_db)
 ) -> AssessmentDetail:
     client = get_client_for_user(db, user, payload.client_id)
+    record = (
+        catalogue_store.get(db, payload.framework_id)
+        if payload.framework_id is not None
+        else catalogue_store.published(db, DEFAULT_FRAMEWORK)
+    )
+    if record is None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Нет опубликованного каталога требований, по которому можно проводить оценку",
+        )
     assessment = Assessment(
         client_id=client.id,
-        name=payload.name or f"CIS Controls {DEFAULT_VERSION}",
+        name=payload.name or f"{record.title} — {client.name}",
         target_ig=payload.target_ig,
         assessor_id=payload.assessor_id or user.id,
+        framework=record.key,
+        framework_version=record.version,
+        framework_id=record.id,
     )
     db.add(assessment)
     db.commit()
@@ -130,9 +169,34 @@ def _detail(assessment: Assessment, result: dict | None = None) -> dict:
     }
 
 
+def _as_text(value) -> str | None:
+    if value is None or value == "":
+        return None
+    return getattr(value, "value", None) or str(value)
+
+
 def _sort_key(safeguard_id: str) -> tuple[int, int]:
     control, _, position = safeguard_id.partition(".")
     return int(control), int(position or 0)
+
+
+@router.get("/compare")
+def compare(
+    base: uuid.UUID,
+    target: uuid.UUID,
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Progress between two audits of one client, requirement by requirement."""
+    first = _get_for_user(db, user, base)
+    second = _get_for_user(db, user, target)
+    if first.client_id != second.client_id:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, "Сравнивать можно только оценки одного клиента"
+        )
+    if first.id == second.id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Выберите две разные оценки")
+    return comparison.build(first, second, _catalogue(first), _catalogue(second))
 
 
 @router.get("/{assessment_id}", response_model=AssessmentDetail)
@@ -174,7 +238,7 @@ def save_items(
     if assessment.status is AssessmentStatus.completed:
         raise HTTPException(status.HTTP_409_CONFLICT, "Оценка завершена и закрыта для правок")
 
-    catalogue = safeguards(assessment.framework, assessment.framework_version)
+    catalogue = _catalogue(assessment)
     unknown = [item.safeguard_id for item in payload.items if item.safeguard_id not in catalogue]
     if unknown:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Неизвестные меры защиты: {unknown}")
@@ -191,7 +255,20 @@ def save_items(
         for field, value in fields.items():
             if field in ("owner", "notes") and value is None:
                 value = ""
+            before = getattr(item, field)
+            if before == value:
+                continue
             setattr(item, field, value)
+            db.add(
+                AssessmentItemHistory(
+                    assessment_id=assessment.id,
+                    safeguard_code=incoming.safeguard_id,
+                    field=field,
+                    old_value=_as_text(before),
+                    new_value=_as_text(value),
+                    changed_by_id=user.id,
+                )
+            )
 
     if assessment.status is AssessmentStatus.draft:
         assessment.status = AssessmentStatus.in_progress
@@ -206,6 +283,96 @@ def delete_assessment(
 ) -> None:
     db.delete(_get_for_user(db, user, assessment_id))
     db.commit()
+
+
+@router.get("/{assessment_id}/history")
+def history(
+    assessment_id: uuid.UUID,
+    safeguard_id: str | None = None,
+    limit: int = 200,
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    """Who changed which verdict, when, and from what — the audit trail of the audit."""
+    assessment = _get_for_user(db, user, assessment_id)
+    stmt = (
+        select(AssessmentItemHistory)
+        .where(AssessmentItemHistory.assessment_id == assessment.id)
+        .order_by(AssessmentItemHistory.changed_at.desc())
+        .limit(min(limit, 1000))
+    )
+    if safeguard_id is not None:
+        stmt = stmt.where(AssessmentItemHistory.safeguard_code == safeguard_id)
+    return [
+        {
+            "id": str(entry.id),
+            "safeguard_id": entry.safeguard_code,
+            "field": entry.field,
+            "old_value": entry.old_value,
+            "new_value": entry.new_value,
+            "changed_at": entry.changed_at.isoformat(),
+            "changed_by": entry.changed_by.full_name or entry.changed_by.email
+            if entry.changed_by
+            else None,
+        }
+        for entry in db.scalars(stmt)
+    ]
+
+
+@router.post("/{assessment_id}/migrate", response_model=AssessmentDetail)
+def migrate(
+    assessment_id: uuid.UUID,
+    payload: MigrateIn,
+    user: User = Depends(require_editor),
+    db: Session = Depends(get_db),
+) -> AssessmentDetail:
+    """Move an audit onto another catalogue version, keeping the verdicts that still apply."""
+    assessment = _get_for_user(db, user, assessment_id)
+    if assessment.status is AssessmentStatus.completed:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Завершённую оценку переносить нельзя")
+
+    target = catalogue_store.get(db, payload.framework_id)
+    if target is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Версия каталога не найдена")
+    if target.status is FrameworkStatus.draft:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "Нельзя проводить оценку по неопубликованному черновику"
+        )
+
+    codes = set(catalogue_store.safeguards_of(target))
+    dropped = [item.safeguard_id for item in assessment.items if item.safeguard_id not in codes]
+    for item in list(assessment.items):
+        if item.safeguard_id in dropped:
+            # The requirement no longer exists in the target version; its verdict goes,
+            # but the history keeps what it was.
+            db.add(
+                AssessmentItemHistory(
+                    assessment_id=assessment.id,
+                    safeguard_code=item.safeguard_id,
+                    field="migrated_out",
+                    old_value=item.status.value,
+                    new_value=None,
+                    changed_by_id=user.id,
+                )
+            )
+            assessment.items.remove(item)
+            db.delete(item)
+
+    db.add(
+        AssessmentItemHistory(
+            assessment_id=assessment.id,
+            safeguard_code="-",
+            field="framework_version",
+            old_value=assessment.framework_version,
+            new_value=target.version,
+            changed_by_id=user.id,
+        )
+    )
+    assessment.framework_id = target.id
+    assessment.framework = target.key
+    assessment.framework_version = target.version
+    db.commit()
+    return AssessmentDetail(**_detail(assessment))
 
 
 @router.get("/{assessment_id}/remediation.csv")

@@ -4,14 +4,20 @@ import sys
 
 from sqlalchemy import select
 
+from app import catalogue
 from app.config import get_settings
-from app.db import Base, SessionLocal, engine
+from app.db import SessionLocal
+from app.migrate import upgrade
 from app.models import Client, Role, System, User
 from app.security import hash_password
 
 
 def init() -> None:
-    Base.metadata.create_all(bind=engine)
+    """Bring the schema up to date, load the catalogue, create the admin."""
+    upgrade()
+    with SessionLocal() as db:
+        catalogue.import_from_file(db)
+        db.commit()
     settings = get_settings()
     with SessionLocal() as db:
         email = settings.admin_email.lower()
@@ -28,6 +34,16 @@ def init() -> None:
         )
         db.commit()
         print(f"created admin {email}")
+
+
+def import_framework() -> None:
+    """Load the extracted requirements catalogue into the database (idempotent)."""
+    upgrade()
+    with SessionLocal() as db:
+        record = catalogue.import_from_file(db)
+        db.commit()
+        count = sum(len(control.safeguards) for control in record.controls)
+        print(f"catalogue {record.key} {record.version}: {len(record.controls)} controls, {count} requirements")
 
 
 def demo() -> None:
@@ -76,7 +92,12 @@ def demo() -> None:
         print("demo data ready: consultant@example.com/consultant, owner@example.com/owner")
 
 
-COMMANDS = {"init": init, "demo": demo}
+COMMANDS = {
+    "migrate": lambda: (upgrade(), print("schema is up to date"))[-1],
+    "init": init,
+    "import-framework": import_framework,
+    "demo": demo,
+}
 
 if __name__ == "__main__":
     name = sys.argv[1] if len(sys.argv) > 1 else "init"

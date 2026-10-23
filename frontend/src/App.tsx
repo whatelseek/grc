@@ -4,6 +4,8 @@ import Layout from "./components/Layout";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import AssessmentPage from "./pages/AssessmentPage";
 import ClientsPage from "./pages/ClientsPage";
+import ComparePage from "./pages/ComparePage";
+import FrameworksPage from "./pages/FrameworksPage";
 import ClientPage from "./pages/ClientPage";
 import DashboardPage from "./pages/DashboardPage";
 import LoginPage from "./pages/LoginPage";
@@ -31,6 +33,8 @@ export default function App() {
           element={<RemediationPage />}
         />
         <Route path="/analytics" element={<AnalyticsPage />} />
+        <Route path="/assessments/compare" element={<ComparePage />} />
+        <Route path="/requirements" element={<FrameworksPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/users" element={<UsersPage />} />
         <Route path="*" element={<Navigate to="/clients" replace />} />

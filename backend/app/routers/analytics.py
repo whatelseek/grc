@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import analytics
+from app import catalogue as catalogue_store
 from app.cis_scoring import compute as compute_cis
 from app.db import get_db
 from app.deps import current_user, get_client_for_user, scoped_surveys, visible_client_ids
@@ -51,11 +52,12 @@ def _recovery_controls(db: Session, user: User, client_id: uuid.UUID | None) -> 
         if assessment.client_id in seen:
             continue
         seen.add(assessment.client_id)
+        if assessment.catalogue is None:
+            continue
         result = compute_cis(
             assessment.items,
             assessment.target_ig,
-            assessment.framework,
-            assessment.framework_version,
+            catalogue_store.safeguards_of(assessment.catalogue),
         )
         by_control = {row["control"]: row for row in result["by_control"]}
         out.append(

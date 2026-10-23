@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app import evidence as storage
 from app.db import get_db
 from app.deps import current_user, get_client_for_user
-from app.frameworks import safeguards
+from app import catalogue as catalogue_store
 from app.models import Assessment, AssessmentItem, AssessmentStatus, Evidence, User
 from app.schemas import EvidenceOut
 
@@ -19,7 +19,9 @@ def _item_for_user(db: Session, user: User, assessment_id: uuid.UUID, safeguard_
     if assessment is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Оценка не найдена")
     get_client_for_user(db, user, assessment.client_id)
-    if safeguard_id not in safeguards(assessment.framework, assessment.framework_version):
+    if assessment.catalogue is None or safeguard_id not in catalogue_store.safeguards_of(
+        assessment.catalogue
+    ):
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Нет меры защиты {safeguard_id}")
 
     item = next((i for i in assessment.items if i.safeguard_id == safeguard_id), None)

@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app.config import get_settings
-from app.db import Base, engine
+from app.db import engine
 from app.routers import (
     analytics,
     assessments,
@@ -13,6 +13,7 @@ from app.routers import (
     clients,
     dashboard,
     evidence,
+    frameworks,
     surveys,
     template,
     users,
@@ -21,8 +22,10 @@ from app.routers import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # The schema is small and versioned with the code; create it on boot if missing.
-    Base.metadata.create_all(bind=engine)
+    # The schema is managed by Alembic: `python -m app.cli migrate` (the container
+    # runs it before uvicorn). Fail loudly rather than serving against a stale schema.
+    with engine.connect() as conn:
+        conn.execute(text("select 1"))
     yield
 
 
@@ -52,6 +55,7 @@ app.include_router(dashboard.router)
 app.include_router(analytics.router)
 app.include_router(assessments.router)
 app.include_router(evidence.router)
+app.include_router(frameworks.router)
 
 
 @app.get("/api/health")

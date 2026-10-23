@@ -1299,3 +1299,65 @@ label {
   margin: 0 0 10px;
   max-width: 70ch;
 }
+
+/* Requirements editing, history and comparison ----------------------------- */
+
+.row-selected {
+  background: var(--grey-100);
+}
+
+.requirement-actions {
+  display: flex;
+  gap: 10px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.requirement {
+  border-left-color: var(--grey-300);
+}
+
+.requirement-form {
+  background: transparent;
+  border: none;
+  padding: 10px 0 2px;
+  margin: 0;
+}
+
+.ig-tag.custom {
+  border-color: var(--periwinkle);
+  color: var(--periwinkle);
+  margin-left: 6px;
+}
+
+.history {
+  font-size: 13px;
+  border-top: 1px solid var(--hairline);
+  padding-top: 8px;
+}
+
+.history summary {
+  cursor: pointer;
+  color: var(--navy);
+}
+
+.history ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.history li {
+  margin-bottom: 4px;
+}
+
+.delta-up {
+  color: var(--teal);
+  font-weight: 600;
+}
+
+.delta-down {
+  color: var(--terracotta);
+  font-weight: 600;
+}

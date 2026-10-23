@@ -7,7 +7,6 @@ so marking something out of scope never flatters the result.
 
 from collections import defaultdict
 
-from app.frameworks import safeguards as all_safeguards
 from app.models import AssessmentItem, ImplementationStatus
 
 STATUS_SCORES = {
@@ -59,13 +58,8 @@ class _Bucket:
         }
 
 
-def compute(
-    items: list[AssessmentItem],
-    target_ig: int,
-    framework: str = "cis",
-    version: str = "v8.1.2",
-) -> dict:
-    catalogue = all_safeguards(framework, version)
+def compute(items: list[AssessmentItem], target_ig: int, catalogue: dict[str, dict]) -> dict:
+    """`catalogue` maps a requirement code to its definition (see app.catalogue)."""
     by_id = {item.safeguard_id: item for item in items}
 
     overall = _Bucket()

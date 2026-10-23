@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import text
 
 from app.db import Base, SessionLocal, engine
+from app.migrate import upgrade
 from app.main import app
 from app.models import Client, Role, System, User
 from app.security import hash_password
@@ -19,10 +20,26 @@ from app.security import hash_password
 
 @pytest.fixture(scope="session", autouse=True)
 def schema():
+    """Run the real migrations, so the tests exercise what production will run."""
     Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
+    with engine.begin() as conn:
+        conn.execute(text("drop table if exists alembic_version"))
+    upgrade()
     yield
     Base.metadata.drop_all(bind=engine)
+    with engine.begin() as conn:
+        conn.execute(text("drop table if exists alembic_version"))
+
+
+@pytest.fixture(autouse=True)
+def catalogue(clean_tables):
+    """Every test starts with the published CIS catalogue loaded."""
+    from app import catalogue as store
+
+    with SessionLocal() as session:
+        record = store.import_from_file(session)
+        session.commit()
+        return record.id
 
 
 @pytest.fixture(autouse=True)
@@ -31,8 +48,9 @@ def clean_tables(schema):
         conn.execute(
             text(
                 "truncate answers, survey_results, surveys, systems, evidence, "
-                "assessment_items, assessments, user_clients, clients, users "
-                "restart identity cascade"
+                "assessment_item_history, assessment_items, assessments, "
+                "framework_safeguards, framework_controls, frameworks, "
+                "user_clients, clients, users restart identity cascade"
             )
         )
     yield

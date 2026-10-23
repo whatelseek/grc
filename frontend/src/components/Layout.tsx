@@ -22,6 +22,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           <NavLink to="/clients">Клиенты</NavLink>
           <NavLink to="/analytics">Аналитика</NavLink>
           <NavLink to="/dashboard">Сводка</NavLink>
+          {user?.role === "admin" && <NavLink to="/requirements">Требования</NavLink>}
           {user?.role === "admin" && <NavLink to="/users">Пользователи</NavLink>}
         </nav>
         <div className="who">

@@ -60,6 +60,14 @@ class Priority(str, enum.Enum):
     high = "high"
 
 
+class FrameworkStatus(str, enum.Enum):
+    """A published version is frozen: editing it produces a new draft version."""
+
+    draft = "draft"
+    published = "published"
+    archived = "archived"
+
+
 user_clients = Table(
     "user_clients",
     Base.metadata,
@@ -195,6 +203,11 @@ class Assessment(Base):
     client_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("clients.id", ondelete="CASCADE"), index=True)
     framework: Mapped[str] = mapped_column(String(40), default="cis")
     framework_version: Mapped[str] = mapped_column(String(20), default="v8.1.2")
+    # The exact catalogue version this audit was carried out against. Editing the
+    # catalogue later creates a new version, so past results never shift.
+    framework_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("frameworks.id", ondelete="RESTRICT"), nullable=True, index=True
+    )
     name: Mapped[str] = mapped_column(String(200), default="")
     # The group the client is aiming for; safeguards above it are out of scope.
     target_ig: Mapped[int] = mapped_column(default=1)
@@ -212,6 +225,7 @@ class Assessment(Base):
 
     client: Mapped[Client] = relationship()
     assessor: Mapped[User | None] = relationship(foreign_keys=[assessor_id])
+    catalogue: Mapped["Framework | None"] = relationship()
     items: Mapped[list["AssessmentItem"]] = relationship(
         back_populates="assessment", cascade="all, delete-orphan", lazy="selectin"
     )
@@ -270,3 +284,105 @@ class Evidence(Base):
 
     item: Mapped[AssessmentItem] = relationship(back_populates="evidence")
     uploaded_by: Mapped[User | None] = relationship(foreign_keys=[uploaded_by_id])
+
+
+class Framework(Base):
+    """One version of a requirements catalogue, e.g. CIS Controls v8.1.2."""
+
+    __tablename__ = "frameworks"
+    __table_args__ = (UniqueConstraint("key", "version", name="uq_frameworks_key_version"),)
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    key: Mapped[str] = mapped_column(String(40), index=True)
+    version: Mapped[str] = mapped_column(String(40))
+    title: Mapped[str] = mapped_column(String(200))
+    source: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[FrameworkStatus] = mapped_column(
+        Enum(FrameworkStatus, name="framework_status"), default=FrameworkStatus.draft
+    )
+    # Which version this one was cloned from, so a lineage can be followed.
+    derived_from_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("frameworks.id", ondelete="SET NULL"), nullable=True
+    )
+    notes: Mapped[str] = mapped_column(Text, default="")
+    created_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    controls: Mapped[list["FrameworkControl"]] = relationship(
+        back_populates="framework",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="FrameworkControl.position",
+    )
+
+
+class FrameworkControl(Base):
+    __tablename__ = "framework_controls"
+    __table_args__ = (UniqueConstraint("framework_id", "number", name="uq_controls_framework_number"),)
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    framework_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("frameworks.id", ondelete="CASCADE"), index=True
+    )
+    number: Mapped[str] = mapped_column(String(20))
+    title: Mapped[str] = mapped_column(String(300))
+    description: Mapped[str] = mapped_column(Text, default="")
+    position: Mapped[int] = mapped_column(default=0)
+
+    framework: Mapped[Framework] = relationship(back_populates="controls")
+    safeguards: Mapped[list["FrameworkSafeguard"]] = relationship(
+        back_populates="control",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="FrameworkSafeguard.position",
+    )
+
+
+class FrameworkSafeguard(Base):
+    """One requirement. `code` is what people cite, e.g. 3.10; it is unique per version."""
+
+    __tablename__ = "framework_safeguards"
+    __table_args__ = (UniqueConstraint("framework_id", "code", name="uq_safeguards_framework_code"),)
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    framework_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("frameworks.id", ondelete="CASCADE"), index=True
+    )
+    control_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("framework_controls.id", ondelete="CASCADE"), index=True
+    )
+    code: Mapped[str] = mapped_column(String(20))
+    title: Mapped[str] = mapped_column(String(400))
+    description: Mapped[str] = mapped_column(Text, default="")
+    asset_class: Mapped[str] = mapped_column(String(60), default="")
+    security_function: Mapped[str] = mapped_column(String(60), default="")
+    ig: Mapped[int] = mapped_column(default=1)
+    position: Mapped[int] = mapped_column(default=0)
+    # Requirements the client added on top of the published catalogue.
+    is_custom: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    control: Mapped[FrameworkControl] = relationship(back_populates="safeguards")
+
+
+class AssessmentItemHistory(Base):
+    """Append-only trail of verdict changes, so an audit can be re-read after the fact."""
+
+    __tablename__ = "assessment_item_history"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    assessment_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("assessments.id", ondelete="CASCADE"), index=True
+    )
+    safeguard_code: Mapped[str] = mapped_column(String(20), index=True)
+    field: Mapped[str] = mapped_column(String(30))
+    old_value: Mapped[str | None] = mapped_column(Text, nullable=True)
+    new_value: Mapped[str | None] = mapped_column(Text, nullable=True)
+    changed_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    changed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    changed_by: Mapped[User | None] = relationship(foreign_keys=[changed_by_id])

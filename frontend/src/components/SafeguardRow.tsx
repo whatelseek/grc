@@ -1,8 +1,36 @@
 import { useRef, useState } from "react";
 
 import { api, getToken } from "../lib/api";
-import { FUNCTION_LABELS, IMPLEMENTATION_LABELS, fileSize, plural } from "../lib/format";
-import type { AssessmentItem, EvidenceFile, ImplementationStatus, Priority, Safeguard } from "../lib/types";
+import {
+  FUNCTION_LABELS,
+  IMPLEMENTATION_LABELS,
+  dateTime,
+  fileSize,
+  plural,
+} from "../lib/format";
+
+const FIELD_LABELS: Record<string, string> = {
+  status: "статус",
+  owner: "ответственный",
+  due_date: "срок",
+  priority: "приоритет",
+  notes: "комментарий",
+  migrated_out: "требование исключено из каталога",
+  framework_version: "версия каталога",
+};
+
+function describe(value: string | null): string {
+  if (value === null) return "—";
+  return IMPLEMENTATION_LABELS[value] ?? value;
+}
+import type {
+  AssessmentItem,
+  EvidenceFile,
+  HistoryEntry,
+  ImplementationStatus,
+  Priority,
+  Safeguard,
+} from "../lib/types";
 
 const STATUSES: ImplementationStatus[] = [
   "not_implemented",
@@ -16,6 +44,7 @@ interface Props {
   safeguard: Safeguard;
   item: AssessmentItem | undefined;
   assessmentId: string;
+  history: HistoryEntry[];
   disabled: boolean;
   onChange: (patch: Partial<AssessmentItem>) => void;
   onEvidenceChange: (safeguardId: string, files: EvidenceFile[]) => void;
@@ -25,6 +54,7 @@ export default function SafeguardRow({
   safeguard,
   item,
   assessmentId,
+  history,
   disabled,
   onChange,
   onEvidenceChange,
@@ -188,6 +218,24 @@ export default function SafeguardRow({
             )}
           </div>
           {error && <div className="error">{error}</div>}
+
+          {history.length > 0 && (
+            <details className="history">
+              <summary>
+                История изменений · {history.length}
+              </summary>
+              <ul>
+                {history.map((entry) => (
+                  <li key={entry.id}>
+                    <span className="muted">{dateTime(entry.changed_at)}</span>{" "}
+                    {FIELD_LABELS[entry.field] ?? entry.field}: {describe(entry.old_value)} →{" "}
+                    {describe(entry.new_value)}
+                    {entry.changed_by && <span className="muted"> · {entry.changed_by}</span>}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
         </div>
       )}
     </div>

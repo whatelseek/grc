@@ -17,6 +17,7 @@ import type {
   AssessmentItem,
   EvidenceFile,
   Framework,
+  HistoryEntry,
   ImplementationStatus,
 } from "../lib/types";
 
@@ -34,20 +35,31 @@ export default function AssessmentPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [functionFilter, setFunctionFilter] = useState("");
   const [openControls, setOpenControls] = useState<Set<string>>(new Set(["1"]));
+  const [history, setHistory] = useState<Map<string, HistoryEntry[]>>(new Map());
 
   const pending = useRef<Map<string, AssessmentItem>>(new Map());
   const timer = useRef<number | null>(null);
 
   useEffect(() => {
     if (!assessmentId) return;
-    Promise.all([
-      api.get<Framework>("/assessments/framework"),
-      api.get<AssessmentDetail>(`/assessments/${assessmentId}`),
-    ])
-      .then(([frameworkData, data]) => {
+    api
+      .get<AssessmentDetail>(`/assessments/${assessmentId}`)
+      .then(async (data) => {
+        // The audit is read against the catalogue version it was carried out on.
+        const frameworkData = await api.get<Framework>(
+          `/assessments/framework${data.framework_id ? `?framework_id=${data.framework_id}` : ""}`,
+        );
         setFramework(frameworkData);
         setAssessment(data);
         setItems(new Map(data.items.map((item) => [item.safeguard_id, item])));
+        const entries = await api
+          .get<HistoryEntry[]>(`/assessments/${assessmentId}/history`)
+          .catch(() => [] as HistoryEntry[]);
+        const grouped = new Map<string, HistoryEntry[]>();
+        for (const entry of entries) {
+          grouped.set(entry.safeguard_id, [...(grouped.get(entry.safeguard_id) ?? []), entry]);
+        }
+        setHistory(grouped);
       })
       .catch((err) => setError(err.message));
   }, [assessmentId]);
@@ -163,8 +175,8 @@ export default function AssessmentPage() {
         <div>
           <h1>{assessment.name}</h1>
           <p className="muted">
-            {framework.title} · {assessment.client_name} · статус:{" "}
-            {ASSESSMENT_STATUS_LABELS[assessment.status]}
+            {framework.title} · каталог {assessment.framework_version} · {assessment.client_name}{" "}
+            · статус: {ASSESSMENT_STATUS_LABELS[assessment.status]}
           </p>
         </div>
         <div className="actions">
@@ -175,6 +187,12 @@ export default function AssessmentPage() {
           </span>
           <Link className="button-link" to={`/assessments/${assessment.id}/remediation`}>
             План устранения
+          </Link>
+          <Link
+            className="button-link"
+            to={`/assessments/compare?client_id=${assessment.client_id}&target=${assessment.id}`}
+          >
+            Сравнить
           </Link>
           {canEdit(user) &&
             (assessment.status === "completed" ? (
@@ -304,6 +322,7 @@ export default function AssessmentPage() {
                     safeguard={safeguard}
                     item={items.get(safeguard.id)}
                     assessmentId={assessment.id}
+                    history={history.get(safeguard.id) ?? []}
                     disabled={readOnly}
                     onChange={(patch) => queue(safeguard.id, patch)}
                     onEvidenceChange={setEvidence}

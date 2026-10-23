@@ -115,11 +115,18 @@ export default function ClientPage() {
               Оценка мер защиты предприятия: что внедрено, где разрывы и кто их закрывает
             </div>
           </div>
-          {canEdit(user) && (
-            <button type="button" onClick={startAssessment}>
-              Новая оценка
-            </button>
-          )}
+          <div className="new-survey">
+            {assessments.length > 1 && (
+              <Link className="button-link" to={`/assessments/compare?client_id=${clientId}`}>
+                Сравнить аудиты
+              </Link>
+            )}
+            {canEdit(user) && (
+              <button type="button" onClick={startAssessment}>
+                Новая оценка
+              </button>
+            )}
+          </div>
         </header>
 
         <table className="table">
