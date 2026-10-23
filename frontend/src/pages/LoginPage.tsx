@@ -32,11 +32,6 @@ export default function LoginPage() {
       <ThemeToggle className="title-theme" />
       <form className="login" onSubmit={submit}>
         <img className="logo" src={theme === "dark" ? logoLight : logoDark} alt="VEXA partners" />
-        <h1>
-          Оценка влияния
-          <br />
-          недоступности и потери данных
-        </h1>
         <label>
           Email
           <input
@@ -61,10 +56,6 @@ export default function LoginPage() {
         <button type="submit" disabled={busy}>
           {busy ? "Входим…" : "Войти"}
         </button>
-        <p className="muted small">
-          Доступ выдаёт администратор проекта. Если войти не получается, напишите своему
-          консультанту.
-        </p>
       </form>
     </div>
   );
