@@ -96,6 +96,10 @@ python scripts/extract_questionnaire.py путь/к/опроснику.xlsx \
 
 ## Разработка без Docker
 
+Веб-интерфейс отдаёт nginx из собранного `frontend/dist`. Конфиг `frontend/nginx.host.conf`
+слушает порт 8080 и проксирует `/api` на uvicorn. В Docker тот же маршрут описан в
+`frontend/nginx.conf`, только upstream там — сервис `backend`.
+
 ```bash
 # backend
 cd backend
@@ -104,11 +108,19 @@ export DATABASE_URL=postgresql+psycopg://bia:bia@localhost:5432/bia
 python -m app.cli demo
 uvicorn app.main:app --reload
 
-# frontend (проксирует /api на localhost:8000)
+# frontend
 cd frontend
 npm install
-npm run dev
+npm run build
+# root in nginx.host.conf points at /workspace; rewrite it to this checkout
+sudo sed "s|root /workspace/frontend/dist;|root $(pwd)/dist;|" nginx.host.conf | sudo tee /etc/nginx/sites-available/bia.conf >/dev/null
+sudo ln -sfn /etc/nginx/sites-available/bia.conf /etc/nginx/sites-enabled/bia.conf
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t && sudo service nginx reload
 ```
+
+UI: http://localhost:8080. Пока правите интерфейс, `npm run dev` поднимает Vite на порту 5173
+с тем же прокси `/api`.
 
 Тесты (нужна работающая PostgreSQL и база `bia_test`):
 

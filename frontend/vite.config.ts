@@ -4,7 +4,10 @@ import react from "@vitejs/plugin-react";
 const demo = process.env.VITE_DEMO === "1";
 
 export default defineConfig({
-  base: "./",
+  // The offline demo is opened as a folder of files, so its URLs stay relative.
+  // The nginx build is served at the site root; absolute URLs keep /surveys/:id
+  // and /clients/:id working after a refresh.
+  base: demo ? "./" : "/",
   plugins: [react()],
   // The preview build is published as a static artifact, so its file names must be stable.
   build: demo
