@@ -1,10 +1,14 @@
 import { useState } from "react";
 
-import logo from "../assets/vexa-logo-light.png";
+import logoDark from "../assets/vexa-logo-dark.png";
+import logoLight from "../assets/vexa-logo-light.png";
+import ThemeToggle from "../components/ThemeToggle";
 import { useAuth } from "../lib/auth";
+import { useTheme } from "../lib/theme";
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const { theme } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -25,13 +29,9 @@ export default function LoginPage() {
 
   return (
     <div className="title-slide">
+      <ThemeToggle className="title-theme" />
       <form className="login" onSubmit={submit}>
-        <img className="logo" src={logo} alt="VEXA partners" />
-        <h1>
-          Оценка влияния
-          <br />
-          недоступности и потери данных
-        </h1>
+        <img className="logo" src={theme === "dark" ? logoLight : logoDark} alt="VEXA partners" />
         <label>
           Email
           <input
@@ -56,10 +56,6 @@ export default function LoginPage() {
         <button type="submit" disabled={busy}>
           {busy ? "Входим…" : "Войти"}
         </button>
-        <p className="muted small">
-          Доступ выдаёт администратор проекта. Если войти не получается, напишите своему
-          консультанту.
-        </p>
       </form>
     </div>
   );

@@ -5,10 +5,10 @@ import { Tooltip, useTooltip } from "./Tooltip";
  *  damage ladder. Every bar is directly labelled, so the colour never carries the
  *  level on its own. */
 export const BAND_COLORS: Record<string, string> = {
-  Низкий: "#096d68",
-  Средний: "#cd9340",
-  Высокий: "#9a390d",
-  "Крайне высокий": "#500005",
+  Низкий: "var(--band-low)",
+  Средний: "var(--band-mid)",
+  Высокий: "var(--band-high)",
+  "Крайне высокий": "var(--band-extreme)",
 };
 
 interface Row {

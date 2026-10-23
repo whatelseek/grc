@@ -4,6 +4,7 @@ import { BrowserRouter, HashRouter } from "react-router-dom";
 
 import App from "./App";
 import { AuthProvider } from "./lib/auth";
+import { ThemeProvider } from "./lib/theme";
 import "./styles.css";
 
 const demo = import.meta.env.VITE_DEMO === "1";
@@ -19,9 +20,11 @@ async function start() {
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
       <Router>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </ThemeProvider>
       </Router>
     </StrictMode>,
   );
