@@ -57,7 +57,7 @@ export const api = {
 };
 
 export function downloadUrl(path: string, filename = "export.csv"): void {
-  // The CSV endpoint needs the bearer token, so fetch it and hand the blob to the browser.
+  // Exports need the bearer token, so fetch them and hand the blob to the browser.
   void (async () => {
     const token = getToken();
     const response = await fetch(`/api${path}`, {

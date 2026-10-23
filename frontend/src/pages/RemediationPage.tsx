@@ -112,9 +112,22 @@ export default function RemediationPage() {
         <button
           type="button"
           className="ghost"
-          onClick={() => downloadUrl(`/assessments/${assessment.id}/remediation.csv`, "cis-remediation.csv")}
+          onClick={() =>
+            downloadUrl(`/assessments/${assessment.id}/remediation.csv`, "cis-remediation.csv")
+          }
         >
           Экспорт в CSV
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            downloadUrl(
+              `/assessments/${assessment.id}/report.docx`,
+              `Аудит ${assessment.client_name ?? ""}.docx`.trim(),
+            )
+          }
+        >
+          Скачать отчёт
         </button>
       </div>
 

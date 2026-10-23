@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app import catalogue as catalogue_store
 from app import comparison
+from app import report as report_builder
 from app.cis_scoring import compute
 from app.db import get_db
 from app.deps import current_user, get_client_for_user, require_editor, visible_client_ids
@@ -22,6 +23,9 @@ from app.models import (
     Client,
     FrameworkStatus,
     ImplementationStatus,
+    Survey,
+    SurveyResult,
+    System,
     User,
 )
 from app.schemas import (
@@ -373,6 +377,93 @@ def migrate(
     assessment.framework_version = target.version
     db.commit()
     return AssessmentDetail(**_detail(assessment))
+
+
+@router.get("/{assessment_id}/report.docx")
+def report(
+    assessment_id: uuid.UUID, user: User = Depends(current_user), db: Session = Depends(get_db)
+) -> StreamingResponse:
+    """The client-facing audit report, as an editable Word document."""
+    assessment = _get_for_user(db, user, assessment_id)
+    catalogue = _catalogue(assessment)
+    result = compute(assessment.items, assessment.target_ig, catalogue)
+
+    # The previous audit of the same client, when there is one, gives the dynamics.
+    previous = db.scalars(
+        select(Assessment)
+        .where(
+            Assessment.client_id == assessment.client_id,
+            Assessment.id != assessment.id,
+            Assessment.created_at < assessment.created_at,
+        )
+        .order_by(Assessment.created_at.desc())
+    ).first()
+    delta = None
+    if previous is not None and previous.catalogue is not None:
+        delta = comparison.build(
+            previous, assessment, catalogue_store.safeguards_of(previous.catalogue), catalogue
+        )
+
+    payload = report_builder.build(
+        assessment,
+        result,
+        catalogue,
+        comparison=delta,
+        recovery=_recovery_rows(db, assessment),
+    )
+    filename = f"cis-audit-{assessment.framework_version}.docx"
+    return StreamingResponse(
+        iter([payload]),
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+def _recovery_rows(db: Session, assessment: Assessment) -> list[dict]:
+    """Systems of this client whose current recovery misses the calculated RTO."""
+    from app.analytics import CURRENT_RTO
+    from app.scales import RTO_SCALE_HOURS, to_hours
+
+    rows: list[dict] = []
+    surveys = db.scalars(
+        select(Survey).join(System).where(System.client_id == assessment.client_id)
+    ).all()
+    for survey in surveys:
+        stored = db.get(SurveyResult, survey.id)
+        required = stored.rto_hours if stored else None
+        if required is None:
+            continue
+        answer = next((a for a in survey.answers if a.question_code == CURRENT_RTO), None)
+        current, beyond = to_hours((answer.text or "").strip() if answer else None, RTO_SCALE_HOURS)
+        if beyond:
+            rows.append(
+                {
+                    "system": survey.system.name,
+                    "required": _hours(required),
+                    "current": "дольше шкалы",
+                    "gap": "не менее " + _hours(max(0.0, 168 - required)),
+                }
+            )
+        elif current is not None and current > required:
+            rows.append(
+                {
+                    "system": survey.system.name,
+                    "required": _hours(required),
+                    "current": _hours(current),
+                    "gap": _hours(current - required),
+                }
+            )
+    return rows
+
+
+def _hours(value: float) -> str:
+    if value < 1 / 60:
+        return f"{round(value * 3600)} сек"
+    if value < 1:
+        return f"{round(value * 60)} мин"
+    if value < 24:
+        return f"{value:g} ч"
+    return f"{value / 24:g} сут"
 
 
 @router.get("/{assessment_id}/remediation.csv")

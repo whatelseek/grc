@@ -274,8 +274,25 @@ export default function AssessmentPage() {
             ))}
           </select>
         </label>
-        <button type="button" className="ghost" onClick={() => downloadUrl(`/assessments/${assessment.id}/remediation.csv`, "cis-remediation.csv")}>
-          Экспорт плана в CSV
+        <button
+          type="button"
+          className="ghost"
+          onClick={() =>
+            downloadUrl(`/assessments/${assessment.id}/remediation.csv`, "cis-remediation.csv")
+          }
+        >
+          План в CSV
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            downloadUrl(
+              `/assessments/${assessment.id}/report.docx`,
+              `Аудит ${assessment.client_name ?? ""}.docx`.trim(),
+            )
+          }
+        >
+          Скачать отчёт
         </button>
       </div>
 
