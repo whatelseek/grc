@@ -118,3 +118,33 @@ def test_empty_portfolio_returns_zeroed_structure(client, make_user, auth):
     assert [row["count"] for row in body["criticality_profile"]] == [0, 0, 0, 0]
     assert body["recovery"] == []
     assert body["damage_profile"] == []
+
+
+def test_recovery_controls_report_the_latest_assessment(
+    client, make_user, make_client_org, make_system, auth
+):
+    """The analytics page links an RTO gap to the controls that would close it."""
+    org = make_client_org("Ромашка")
+    consultant, _ = make_user(Role.consultant, clients=[org])
+    headers = auth(consultant)
+    client.post("/api/surveys", json={"system_id": str(make_system(org).id)}, headers=headers)
+
+    assert client.get("/api/analytics", headers=headers).json()["recovery_controls"] == []
+
+    assessment = client.post(
+        "/api/assessments", json={"client_id": str(org.id), "target_ig": 1}, headers=headers
+    ).json()
+    client.patch(
+        f"/api/assessments/{assessment['id']}/items",
+        json={"items": [{"safeguard_id": "11.1", "status": "implemented"}]},
+        headers=headers,
+    )
+
+    rows = client.get("/api/analytics", headers=headers).json()["recovery_controls"]
+    assert len(rows) == 1
+    assert rows[0]["client_name"] == "Ромашка"
+    controls = {row["control"]: row for row in rows[0]["controls"]}
+    assert set(controls) == {"11", "17"}
+    # Control 11 has four IG1 safeguards; one implemented is a quarter of them.
+    assert controls["11"]["implementation"] == 0.25
+    assert controls["17"]["implementation"] == 0.0

@@ -6,8 +6,16 @@ import CollectionBar, { type CollectionRow } from "../components/charts/Collecti
 import DamageProfile, { type DamageRow } from "../components/charts/DamageProfile";
 import GapDumbbell, { type RecoveryRow } from "../components/charts/GapDumbbell";
 import { api } from "../lib/api";
-import { hours, plural, systems } from "../lib/format";
+import { criticality, hours, implementationClass, plural, systems } from "../lib/format";
 import type { Client } from "../lib/types";
+
+interface RecoveryControls {
+  assessment_id: string;
+  client_id: string;
+  client_name: string;
+  target_ig: number;
+  controls: { control: string; title: string; implementation: number | null; not_implemented: number }[];
+}
 
 interface Analytics {
   kpis: {
@@ -22,6 +30,7 @@ interface Analytics {
   collection: CollectionRow[];
   recovery: RecoveryRow[];
   damage_profile: DamageRow[];
+  recovery_controls?: RecoveryControls[];
 }
 
 export default function AnalyticsPage() {
@@ -104,6 +113,48 @@ export default function AnalyticsPage() {
         <BandBars rows={data.criticality_profile} />
         <CollectionBar rows={data.collection} />
       </div>
+
+      {kpis.rto_gaps > 0 && (data.recovery_controls ?? []).length > 0 && (
+        <section className="card recovery-link">
+          <h3>Чем закрываются эти разрывы</h3>
+          <p className="muted small">
+            Сроки восстановления держатся на мерах CIS: контроль 11 отвечает за
+            восстановление данных, контроль 17 — за реагирование на инциденты.
+          </p>
+          <div className="table-scroll">
+          <table className="table small">
+            <thead>
+              <tr>
+                <th>Клиент</th>
+                <th>11. Data Recovery</th>
+                <th>17. Incident Response</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {(data.recovery_controls ?? []).map((row) => (
+                <tr key={row.assessment_id}>
+                  <th scope="row">{row.client_name}</th>
+                  {row.controls.map((control) => (
+                    <td key={control.control}>
+                      <span className={implementationClass(control.implementation)}>
+                        {criticality(control.implementation)}
+                      </span>
+                      {control.not_implemented > 0 && (
+                        <span className="muted small"> · {control.not_implemented} не внедрено</span>
+                      )}
+                    </td>
+                  ))}
+                  <td>
+                    <Link to={`/assessments/${row.assessment_id}`}>открыть аудит</Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          </div>
+        </section>
+      )}
 
       <GapDumbbell rows={data.recovery} metric="rto" />
       <GapDumbbell rows={data.recovery} metric="rpo" />

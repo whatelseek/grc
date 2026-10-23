@@ -71,7 +71,12 @@ export default function DashboardPage() {
         </label>
         <button
           type="button"
-          onClick={() => downloadUrl(`/dashboard/export.csv${clientId ? `?client_id=${clientId}` : ""}`)}
+          onClick={() =>
+            downloadUrl(
+              `/dashboard/export.csv${clientId ? `?client_id=${clientId}` : ""}`,
+              "bia-dashboard.csv",
+            )
+          }
         >
           Экспорт в CSV
         </button>

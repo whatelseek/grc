@@ -2,10 +2,12 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import Layout from "./components/Layout";
 import AnalyticsPage from "./pages/AnalyticsPage";
+import AssessmentPage from "./pages/AssessmentPage";
 import ClientsPage from "./pages/ClientsPage";
 import ClientPage from "./pages/ClientPage";
 import DashboardPage from "./pages/DashboardPage";
 import LoginPage from "./pages/LoginPage";
+import RemediationPage from "./pages/RemediationPage";
 import SurveyPage from "./pages/SurveyPage";
 import UsersPage from "./pages/UsersPage";
 import { useAuth } from "./lib/auth";
@@ -23,6 +25,11 @@ export default function App() {
         <Route path="/clients" element={<ClientsPage />} />
         <Route path="/clients/:clientId" element={<ClientPage />} />
         <Route path="/surveys/:surveyId" element={<SurveyPage />} />
+        <Route path="/assessments/:assessmentId" element={<AssessmentPage />} />
+        <Route
+          path="/assessments/:assessmentId/remediation"
+          element={<RemediationPage />}
+        />
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/users" element={<UsersPage />} />

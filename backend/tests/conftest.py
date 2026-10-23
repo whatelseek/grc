@@ -5,6 +5,7 @@ os.environ.setdefault(
     "DATABASE_URL", "postgresql+psycopg://bia:bia@localhost:5432/bia_test"
 )
 os.environ.setdefault("JWT_SECRET", "test-secret-that-is-long-enough-for-hs256")
+os.environ.setdefault("EVIDENCE_DIR", "/tmp/bia-test-evidence")
 
 import pytest
 from fastapi.testclient import TestClient
@@ -29,7 +30,8 @@ def clean_tables(schema):
     with engine.begin() as conn:
         conn.execute(
             text(
-                "truncate answers, survey_results, surveys, systems, user_clients, clients, users "
+                "truncate answers, survey_results, surveys, systems, evidence, "
+                "assessment_items, assessments, user_clients, clients, users "
                 "restart identity cascade"
             )
         )

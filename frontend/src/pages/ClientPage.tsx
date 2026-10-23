@@ -3,8 +3,23 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { api } from "../lib/api";
 import { canEdit, useAuth } from "../lib/auth";
-import { STATUS_LABELS, criticality, criticalityClass, dateTime, hours } from "../lib/format";
-import type { Client, DashboardRow, System, SurveyDetail, User } from "../lib/types";
+import {
+  ASSESSMENT_STATUS_LABELS,
+  STATUS_LABELS,
+  criticality,
+  criticalityClass,
+  dateTime,
+  hours,
+  implementationClass,
+} from "../lib/format";
+import type {
+  Assessment,
+  Client,
+  DashboardRow,
+  System,
+  SurveyDetail,
+  User,
+} from "../lib/types";
 
 export default function ClientPage() {
   const { clientId } = useParams<{ clientId: string }>();
@@ -13,20 +28,23 @@ export default function ClientPage() {
   const [client, setClient] = useState<Client | null>(null);
   const [systems, setSystems] = useState<System[]>([]);
   const [rows, setRows] = useState<DashboardRow[]>([]);
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [people, setPeople] = useState<User[]>([]);
   const [form, setForm] = useState({ name: "", business_owner: "", it_owner: "" });
   const [error, setError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     if (!clientId) return;
-    const [clientData, systemsData, dashboardData] = await Promise.all([
+    const [clientData, systemsData, dashboardData, assessmentData] = await Promise.all([
       api.get<Client>(`/clients/${clientId}`),
       api.get<System[]>(`/clients/${clientId}/systems`),
       api.get<DashboardRow[]>(`/dashboard?client_id=${clientId}`),
+      api.get<Assessment[]>(`/assessments?client_id=${clientId}`),
     ]);
     setClient(clientData);
     setSystems(systemsData);
     setRows(dashboardData);
+    setAssessments(assessmentData);
     if (canEdit(user)) {
       setPeople(await api.get<User[]>("/users").catch(() => []));
     }
@@ -45,6 +63,19 @@ export default function ClientPage() {
       await reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось добавить систему");
+    }
+  }
+
+  async function startAssessment() {
+    setError(null);
+    try {
+      const assessment = await api.post<Assessment>("/assessments", {
+        client_id: clientId,
+        target_ig: 1,
+      });
+      navigate(`/assessments/${assessment.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Не удалось создать оценку");
     }
   }
 
@@ -75,6 +106,68 @@ export default function ClientPage() {
       </div>
       <h1>{client.name}</h1>
       {error && <div className="error">{error}</div>}
+
+      <section className="card">
+        <header className="system-head">
+          <div>
+            <h2>Аудит по CIS Controls</h2>
+            <div className="muted">
+              Оценка мер защиты предприятия: что внедрено, где разрывы и кто их закрывает
+            </div>
+          </div>
+          {canEdit(user) && (
+            <button type="button" onClick={startAssessment}>
+              Новая оценка
+            </button>
+          )}
+        </header>
+
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Оценка</th>
+              <th>Фреймворк</th>
+              <th>Цель</th>
+              <th>Статус</th>
+              <th>Реализация</th>
+              <th>Открытых мер</th>
+              <th>Обновлена</th>
+            </tr>
+          </thead>
+          <tbody>
+            {assessments.map((assessment) => (
+              <tr key={assessment.id}>
+                <td>
+                  <Link to={`/assessments/${assessment.id}`}>{assessment.name}</Link>
+                </td>
+                <td className="small">
+                  CIS {assessment.framework_version}
+                </td>
+                <td>IG{assessment.target_ig}</td>
+                <td>{ASSESSMENT_STATUS_LABELS[assessment.status]}</td>
+                <td>
+                  <span className={implementationClass(assessment.implementation)}>
+                    {criticality(assessment.implementation)}
+                  </span>
+                </td>
+                <td>
+                  <Link to={`/assessments/${assessment.id}/remediation`}>{assessment.gaps_open}</Link>
+                </td>
+                <td className="small">{dateTime(assessment.updated_at)}</td>
+              </tr>
+            ))}
+            {assessments.length === 0 && (
+              <tr>
+                <td colSpan={7} className="muted">
+                  Оценок пока нет
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </section>
+
+      <h2 className="section-heading">Оценка влияния (BIA)</h2>
 
       {systems.length === 0 && <p className="empty">У клиента ещё нет систем.</p>}
 

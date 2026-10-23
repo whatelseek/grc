@@ -56,7 +56,7 @@ export const api = {
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
 };
 
-export function downloadUrl(path: string): void {
+export function downloadUrl(path: string, filename = "export.csv"): void {
   // The CSV endpoint needs the bearer token, so fetch it and hand the blob to the browser.
   void (async () => {
     const token = getToken();
@@ -67,7 +67,7 @@ export function downloadUrl(path: string): void {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "bia-dashboard.csv";
+    link.download = filename;
     link.click();
     URL.revokeObjectURL(url);
   })();

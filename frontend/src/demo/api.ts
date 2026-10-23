@@ -338,6 +338,8 @@ function route(method: string, path: string, query: URLSearchParams, body: any):
   if (systemsMatch) return json(systems.filter((s) => s.client_id === systemsMatch[1]));
 
   if (path === "/dashboard") return json(dashboardRows(query.get("client_id")));
+  // The CIS audit is not part of the offline preview; an empty list keeps the UI whole.
+  if (path === "/assessments") return json([]);
   if (path === "/analytics") return json(analytics(query.get("client_id")));
   if (path === "/dashboard/export.csv") {
     return new Response("Экспорт в CSV доступен в рабочей версии приложения\n", {

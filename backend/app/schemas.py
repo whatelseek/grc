@@ -1,9 +1,15 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from app.models import Role, SurveyStatus
+from app.models import (
+    AssessmentStatus,
+    ImplementationStatus,
+    Priority,
+    Role,
+    SurveyStatus,
+)
 
 
 class ORMModel(BaseModel):
@@ -173,3 +179,70 @@ class DashboardRow(BaseModel):
     required_total: int
     warnings: int
     updated_at: datetime
+
+
+class AssessmentCreate(BaseModel):
+    client_id: uuid.UUID
+    name: str = ""
+    target_ig: int = Field(default=1, ge=1, le=3)
+    assessor_id: uuid.UUID | None = None
+
+
+class AssessmentUpdate(BaseModel):
+    name: str | None = None
+    target_ig: int | None = Field(default=None, ge=1, le=3)
+    status: AssessmentStatus | None = None
+    assessor_id: uuid.UUID | None = None
+
+
+class EvidenceOut(ORMModel):
+    id: uuid.UUID
+    filename: str
+    content_type: str
+    size_bytes: int
+    uploaded_at: datetime
+
+
+class ItemIn(BaseModel):
+    safeguard_id: str
+    status: ImplementationStatus | None = None
+    owner: str | None = None
+    due_date: date | None = None
+    priority: Priority | None = None
+    notes: str | None = None
+
+
+class ItemOut(ORMModel):
+    safeguard_id: str
+    status: ImplementationStatus
+    owner: str
+    due_date: date | None
+    priority: Priority | None
+    notes: str
+    evidence: list[EvidenceOut] = Field(default_factory=list)
+
+
+class ItemsPatch(BaseModel):
+    items: list[ItemIn]
+
+
+class AssessmentOut(ORMModel):
+    id: uuid.UUID
+    client_id: uuid.UUID
+    client_name: str | None = None
+    framework: str
+    framework_version: str
+    name: str
+    target_ig: int
+    status: AssessmentStatus
+    assessor_id: uuid.UUID | None
+    created_at: datetime
+    updated_at: datetime
+    completed_at: datetime | None
+    implementation: float | None = None
+    gaps_open: int = 0
+
+
+class AssessmentDetail(AssessmentOut):
+    items: list[ItemOut]
+    result: dict

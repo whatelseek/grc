@@ -55,3 +55,50 @@ export function plural(count: number, one: string, few: string, many: string): s
 export function systems(count: number): string {
   return plural(count, "система", "системы", "систем");
 }
+
+export const IMPLEMENTATION_LABELS: Record<string, string> = {
+  not_implemented: "Не внедрено",
+  partial: "Частично",
+  implemented: "Внедрено",
+  not_applicable: "Не применимо",
+};
+
+export const PRIORITY_LABELS: Record<string, string> = {
+  high: "Высокий",
+  medium: "Средний",
+  low: "Низкий",
+};
+
+export const FUNCTION_LABELS: Record<string, string> = {
+  Govern: "Govern · управление",
+  Identify: "Identify · учёт",
+  Protect: "Protect · защита",
+  Detect: "Detect · обнаружение",
+  Respond: "Respond · реагирование",
+  Recover: "Recover · восстановление",
+};
+
+export const ASSESSMENT_STATUS_LABELS: Record<string, string> = {
+  draft: "Черновик",
+  in_progress: "В работе",
+  completed: "Завершена",
+};
+
+/** Implementation runs 0–100%; the bands mirror the status colours of the checklist. */
+export function implementationClass(value: number | null): string {
+  if (value === null) return "chip";
+  if (value >= 0.9) return "chip chip-low";
+  if (value >= 0.6) return "chip chip-medium";
+  if (value >= 0.3) return "chip chip-high";
+  return "chip chip-extreme";
+}
+
+export function fileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} Б`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} КБ`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
+}
+
+export function shortDate(value: string | null): string {
+  return value ? new Date(value).toLocaleDateString("ru-RU") : "—";
+}

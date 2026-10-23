@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     access_token_ttl_minutes: int = 12 * 60
     cors_origins: str = "http://localhost:5173,http://localhost:8080"
 
+    # Evidence files attached to safeguards.
+    evidence_dir: str = "/data/evidence"
+    evidence_max_bytes: int = 25 * 1024 * 1024
+
     # Bootstrap admin, created by `python -m app.cli init` if absent.
     admin_email: str = "admin@example.com"
     admin_password: str = "admin"

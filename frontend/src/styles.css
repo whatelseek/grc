@@ -403,13 +403,15 @@ label {
 
 .toolbar {
   display: flex;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 12px 16px;
   align-items: flex-end;
   margin-bottom: 14px;
 }
 
 .toolbar label {
-  min-width: 190px;
+  flex: 1 1 190px;
+  min-width: 0;
 }
 
 /* Tables: hairline rules only, as in the template's data slides. */
@@ -498,6 +500,7 @@ label {
 
 .survey-head {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
@@ -506,6 +509,7 @@ label {
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
 }
@@ -914,4 +918,240 @@ label {
 
 .table-scroll {
   overflow-x: auto;
+}
+
+/* CIS assessment ----------------------------------------------------------- */
+
+.section-heading {
+  margin: 22px 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  color: var(--navy);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 6px;
+}
+
+.button-link {
+  display: inline-block;
+  padding: 7px 16px;
+  border: 1px solid var(--navy);
+  border-radius: var(--radius);
+  color: var(--navy);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.button-link:hover {
+  background: var(--grey-100);
+}
+
+.tile-target {
+  border-left-color: var(--periwinkle);
+}
+
+.checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkbox input {
+  width: auto;
+}
+
+.control-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.control-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.control-number {
+  color: var(--navy);
+  font-variant-numeric: tabular-nums;
+  min-width: 22px;
+}
+
+.control-score {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.safeguards {
+  margin-top: 10px;
+  border-top: 1px solid var(--hairline);
+}
+
+.safeguard {
+  border-bottom: 1px solid var(--hairline);
+  padding: 9px 0 9px 10px;
+  /* The status stripe is the quickest read down a list of 153 rows. */
+  border-left: 3px solid var(--grey-300);
+}
+
+.safeguard.status-implemented {
+  border-left-color: var(--teal);
+}
+.safeguard.status-partial {
+  border-left-color: var(--amber);
+}
+.safeguard.status-not_implemented {
+  border-left-color: var(--terracotta);
+}
+.safeguard.status-not_applicable {
+  border-left-color: var(--grey-300);
+  opacity: 0.75;
+}
+
+.safeguard-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.sg-id {
+  font-variant-numeric: tabular-nums;
+  color: var(--grey-500);
+  font-size: 13px;
+  min-width: 38px;
+  padding-top: 2px;
+}
+
+.sg-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.sg-title {
+  font-weight: 550;
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.sg-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--grey-500);
+  margin-top: 2px;
+}
+
+.ig-tag {
+  display: inline-block;
+  padding: 0 6px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  font-size: 11px;
+  color: var(--navy);
+}
+
+.evidence-count {
+  color: var(--navy);
+}
+
+.sg-status {
+  width: auto;
+  min-width: 150px;
+  max-width: 100%;
+}
+
+@media (max-width: 720px) {
+  .safeguard-head {
+    flex-wrap: wrap;
+  }
+
+  .safeguard-body {
+    margin-left: 0;
+  }
+
+  .sg-status {
+    flex: 1 1 100%;
+  }
+}
+
+.safeguard-body {
+  margin: 8px 0 4px 50px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 860px;
+}
+
+.remediation-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.remediation-fields label {
+  min-width: 170px;
+}
+
+.evidence {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.evidence-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.evidence-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  background: var(--grey-100);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  font-size: 13px;
+}
+
+.upload {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--navy);
+  cursor: pointer;
+}
+
+.upload input[type="file"] {
+  width: auto;
+  max-width: 190px;
+  font-size: 12px;
+  padding: 3px;
+}
+
+.recovery-link {
+  border-left: 3px solid var(--periwinkle);
+}
+
+.recovery-link h3 {
+  margin-bottom: 2px;
+}
+
+.recovery-link p {
+  margin: 0 0 10px;
+  max-width: 70ch;
 }

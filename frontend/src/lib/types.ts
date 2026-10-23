@@ -157,3 +157,115 @@ export interface DashboardRow {
   warnings: number;
   updated_at: string;
 }
+
+export type ImplementationStatus =
+  | "not_implemented"
+  | "partial"
+  | "implemented"
+  | "not_applicable";
+export type Priority = "low" | "medium" | "high";
+export type AssessmentStatus = "draft" | "in_progress" | "completed";
+
+export interface Safeguard {
+  id: string;
+  title: string;
+  description: string;
+  asset_class: string;
+  security_function: string;
+  ig: 1 | 2 | 3;
+}
+
+export interface Control {
+  number: string;
+  title: string;
+  description: string;
+  safeguards: Safeguard[];
+}
+
+export interface Framework {
+  framework: string;
+  version: string;
+  title: string;
+  source: string;
+  asset_classes: string[];
+  security_functions: string[];
+  implementation_groups: { level: number; title: string; description: string }[];
+  controls: Control[];
+}
+
+export interface EvidenceFile {
+  id: string;
+  filename: string;
+  content_type: string;
+  size_bytes: number;
+  uploaded_at: string;
+}
+
+export interface AssessmentItem {
+  safeguard_id: string;
+  status: ImplementationStatus;
+  owner: string;
+  due_date: string | null;
+  priority: Priority | null;
+  notes: string;
+  evidence: EvidenceFile[];
+}
+
+export interface Bucket {
+  implementation: number | null;
+  in_scope: number;
+  counted: number;
+  implemented: number;
+  partial: number;
+  not_implemented: number;
+  not_applicable: number;
+}
+
+export interface Gap {
+  safeguard_id: string;
+  control: string;
+  control_title: string;
+  title: string;
+  ig: 1 | 2 | 3;
+  security_function: string;
+  asset_class: string;
+  status: ImplementationStatus;
+  owner: string;
+  due_date: string | null;
+  priority: Priority | null;
+  notes: string;
+  evidence_count: number;
+}
+
+export interface AssessmentResult {
+  target_ig: number;
+  overall: Bucket;
+  implementation_groups: Record<string, Bucket & { level: number }>;
+  by_control: (Bucket & { control: string })[];
+  by_function: (Bucket & { security_function: string })[];
+  by_asset_class: (Bucket & { asset_class: string })[];
+  gaps: Gap[];
+  progress: { in_scope: number; assessed: number; answered_total: number; complete: boolean };
+}
+
+export interface Assessment {
+  id: string;
+  client_id: string;
+  client_name: string | null;
+  framework: string;
+  framework_version: string;
+  name: string;
+  target_ig: number;
+  status: AssessmentStatus;
+  assessor_id: string | null;
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+  implementation: number | null;
+  gaps_open: number;
+}
+
+export interface AssessmentDetail extends Assessment {
+  items: AssessmentItem[];
+  result: AssessmentResult;
+}

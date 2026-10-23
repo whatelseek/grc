@@ -1,10 +1,12 @@
 import enum
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     Column,
+    Date,
     DateTime,
     Enum,
     Float,
@@ -35,6 +37,27 @@ class SurveyStatus(str, enum.Enum):
     draft = "draft"
     submitted = "submitted"
     reviewed = "reviewed"
+
+
+class AssessmentStatus(str, enum.Enum):
+    draft = "draft"
+    in_progress = "in_progress"
+    completed = "completed"
+
+
+class ImplementationStatus(str, enum.Enum):
+    """How far a CIS safeguard is implemented. `not_applicable` leaves the score alone."""
+
+    not_implemented = "not_implemented"
+    partial = "partial"
+    implemented = "implemented"
+    not_applicable = "not_applicable"
+
+
+class Priority(str, enum.Enum):
+    low = "low"
+    medium = "medium"
+    high = "high"
 
 
 user_clients = Table(
@@ -161,3 +184,89 @@ class SurveyResult(Base):
     )
 
     survey: Mapped[Survey] = relationship(back_populates="result")
+
+
+class Assessment(Base):
+    """One CIS Controls assessment of a client, as of a date."""
+
+    __tablename__ = "assessments"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    client_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("clients.id", ondelete="CASCADE"), index=True)
+    framework: Mapped[str] = mapped_column(String(40), default="cis")
+    framework_version: Mapped[str] = mapped_column(String(20), default="v8.1.2")
+    name: Mapped[str] = mapped_column(String(200), default="")
+    # The group the client is aiming for; safeguards above it are out of scope.
+    target_ig: Mapped[int] = mapped_column(default=1)
+    status: Mapped[AssessmentStatus] = mapped_column(
+        Enum(AssessmentStatus, name="assessment_status"), default=AssessmentStatus.draft
+    )
+    assessor_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    client: Mapped[Client] = relationship()
+    assessor: Mapped[User | None] = relationship(foreign_keys=[assessor_id])
+    items: Mapped[list["AssessmentItem"]] = relationship(
+        back_populates="assessment", cascade="all, delete-orphan", lazy="selectin"
+    )
+
+
+class AssessmentItem(Base):
+    """The verdict on one safeguard, plus what it takes to close it."""
+
+    __tablename__ = "assessment_items"
+    __table_args__ = (
+        UniqueConstraint("assessment_id", "safeguard_id", name="uq_items_assessment_safeguard"),
+    )
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    assessment_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("assessments.id", ondelete="CASCADE"), index=True
+    )
+    safeguard_id: Mapped[str] = mapped_column(String(10), index=True)
+    status: Mapped[ImplementationStatus] = mapped_column(
+        Enum(ImplementationStatus, name="implementation_status"),
+        default=ImplementationStatus.not_implemented,
+    )
+    owner: Mapped[str] = mapped_column(String(200), default="")
+    due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    priority: Mapped[Priority | None] = mapped_column(
+        Enum(Priority, name="remediation_priority"), nullable=True
+    )
+    notes: Mapped[str] = mapped_column(Text, default="")
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    assessment: Mapped[Assessment] = relationship(back_populates="items")
+    evidence: Mapped[list["Evidence"]] = relationship(
+        back_populates="item", cascade="all, delete-orphan", lazy="selectin"
+    )
+
+
+class Evidence(Base):
+    """A file backing up a verdict. The bytes live on disk; this row is the index."""
+
+    __tablename__ = "evidence"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    item_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("assessment_items.id", ondelete="CASCADE"), index=True
+    )
+    filename: Mapped[str] = mapped_column(String(255))
+    content_type: Mapped[str] = mapped_column(String(120), default="application/octet-stream")
+    size_bytes: Mapped[int] = mapped_column(BigInteger, default=0)
+    stored_name: Mapped[str] = mapped_column(String(80))
+    uploaded_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    item: Mapped[AssessmentItem] = relationship(back_populates="evidence")
+    uploaded_by: Mapped[User | None] = relationship(foreign_keys=[uploaded_by_id])
